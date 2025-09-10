@@ -1,16 +1,19 @@
 Package: CFeval
 Type: Package
-Title: What the Package Does (Title Case)
-Version: 0.1.0
+Title: Evaluation of Counterfactual Performance
+Version: 0.0.1
 Authors@R: c(
     person(
-      "Jane", "Doe",
-      email = "jane@example.com",
+      "Jasper", "van Egeraat",
+      email = "j.w.a.van_egeraat@lumc.nl",
       role = c("aut", "cre")
     )
   )
-Description: More about what it does (maybe more than one line).
-    Continuation lines should be indented.
-License: What license is it under?
+Description: Predictions under interventions are estimates of what a subject's risk would be 
+  if they were to follow a certain counterfactual treatment. Assessing predictive performance
+  for these predictions is challenging, as only the outcome of the realized treatment can be
+  observed.(Keogh, van Geloven, DOI 10.1097/EDE.0000000000001713). This R package facilitates 
+  assessing counterfactual performance of interventional predictions. 
+License: GPL (>= 3)
 Encoding: UTF-8
 LazyData: true
