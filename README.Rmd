@@ -1,0 +1,81 @@
+---
+output: github_document
+---
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+```
+# CFeval <!-- badges: start --> <!-- badges: end -->
+
+Predictions under interventions are estimates of what a subject's risk would be
+if they were to follow a certain counterfactual treatment. Assessing predictive
+performance for these predictions is challenging, as only the outcome of the
+realized treatment can be observed.(Keogh, van Geloven, DOI
+10.1097/EDE.0000000000001713). This R package facilitates assessing
+counterfactual performance of interventional predictions.
+
+## Installation You can install the development version of CFeval from
+[GitHub](https://github.com/) with:
+``` r
+# install.packages("pak")
+pak::pak("jvelumc/CFscore")
+```
+## Toy example
+
+Simulate some example data for binary outcome Y and (point) treatment A,
+confounded by a variable L. Variable P is a prognostic variable for only the
+outcome. The treatment reduces the risk on a bad outcome (Y = 1) in this simulated 
+example. 
+```{r example}
+library(CFeval)
+df_dev <- build_data(5000)
+# Fitting a logistic regression model on this data without accounting for the
+# confounder L results in a model where treatment apparently increases the risk
+# on the outcome
+naive_model <- glm(Y ~ A + P, family = "binomial", data = df_dev)
+summary(naive_model)
+# Fitting a model using IP-weighting to account for the confounder results in a
+# model where treatment decreases the risk on the outcome, which we know to be
+# true in our simulated data
+causal_model <- build_causal_model(df_dev)
+summary(causal_model)
+```
+
+If either model is to be used to decide on treatment options A, we need accurate
+estimates of the counterfactual risk on outcome under both treatment options A =
+1 and A = 0. 
+
+Validating a model capable of estimating counterfactual risks is challenging. 
+This package aims to guide the user in assessing how well the predictions would 
+match the validation data if all individuals had followed the treatment under 
+which predictions are made. 
+
+The main function CFscore() estimates these counterfactual performance measures 
+in a validation dataset, printing all assumptions required along the way.
+
+
+```{r}
+df_val <- build_data(4000)
+CFscore(
+  data = df_val,
+  model = causal_model, 
+  Y_column_name = "Y", 
+  propensity_formula = A ~ L
+)
+```
+
+Compare that to the counterfactual performance of the naive model:
+```{r}
+CFscore(
+  data = df_val,
+  model = naive_model,
+  Y_column_name = "Y",
+  propensity_formula = A ~ L,
+  quiet_mode = TRUE # hides all the additional output.
+)
+```
