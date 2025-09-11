@@ -24,7 +24,7 @@ counterfactual performance of interventional predictions.
 [GitHub](https://github.com/) with:
 ``` r
 # install.packages("pak")
-pak::pak("jvelumc/CFscore")
+pak::pak("jvelumc/CFeval")
 ```
 ## Toy example
 
@@ -33,7 +33,7 @@ confounded by a variable L. Variable P is a prognostic variable for only the
 outcome. The treatment reduces the risk on a bad outcome (Y = 1) in this simulated 
 example. 
 
-![Figure 1. DAG for toy example](dag.png)
+![Figure 1. DAG for toy example](man/figures/dag.png)
 
 ```{r example}
 library(CFeval)
@@ -87,3 +87,4 @@ CFscore(
   quiet_mode = TRUE # hides all the additional output.
 )
 ```
+

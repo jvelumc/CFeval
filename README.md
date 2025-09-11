@@ -17,7 +17,7 @@ predictions.
 
 ``` r
 # install.packages("pak")
-pak::pak("jvelumc/CFscore")
+pak::pak("jvelumc/CFeval")
 ```
 
 ## Toy example
@@ -28,7 +28,7 @@ the outcome. The treatment reduces the risk on a bad outcome (Y = 1) in
 this simulated example.
 
 <figure>
-<img src="dag.png" alt="Figure 1. DAG for toy example" />
+<img src="man/figures/dag.png" alt="Figure 1. DAG for toy example" />
 <figcaption aria-hidden="true">Figure 1. DAG for toy
 example</figcaption>
 </figure>
