@@ -50,10 +50,22 @@ CFscore <- function(data, model, Y_column_name, propensity_formula, quiet_mode =
   data0 <- data[data[[A]] == 0, ]
   data1 <- data[data[[A]] == 1, ]
 
-  oe0 <- stats::weighted.mean(data[data[[A]] == 0, Y_column_name], data[data[[A]] == 0, "ipw"]) /
-    mean(data$CF0)
-  oe1 <- stats::weighted.mean(data[data[[A]] == 1, Y_column_name], data[data[[A]] == 1, "ipw"]) /
-    mean(data$CF1)
+  oe0 <- calibration_weighted(
+    outcomes = data[[Y_column_name]],
+    predictions = data$CF0,
+    treatments = data[[A]],
+    treatment_of_interest = 0,
+    weights = data$ipw
+  )
+
+  oe1 <- calibration_weighted(
+    outcomes = data[[Y_column_name]],
+    predictions = data$CF1,
+    treatments = data[[A]],
+    treatment_of_interest = 1,
+    weights = data$ipw
+  )
+
   oe_observed <- mean(data[[Y_column_name]]) / mean(prediction_under_observed_trt)
 
 
