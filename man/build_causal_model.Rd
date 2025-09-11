@@ -21,7 +21,7 @@ Build a simple toy-model capable of predictions under interventions, on a
 simple dataset.
 }
 \examples{
-df_dev <- build_data()
+df_dev <- build_data(1000)
 causal_model <- build_causal_model(df_dev)
 summary(causal_model)
 # Compare this to the 'naive' model

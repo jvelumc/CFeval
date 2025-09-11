@@ -30,29 +30,29 @@ CFscore <- function(data, model, Y_column_name, propensity_formula, quiet_mode =
     # predict outcome probabilities for all patients, setting their treatment
     # to CF_treatment
     data[[A]] <- CF_treatment
-    predict(model, newdata = data, type = "response")
+    stats::predict(model, newdata = data, type = "response")
   }
 
   data$CF0 <- predict_CF(model, data, 0)
   data$CF1 <- predict_CF(model, data, 1)
-  prediction_under_observed_trt <- predict(model, newdata = data, type = "response")
+  prediction_under_observed_trt <- stats::predict(model, newdata = data, type = "response")
 
-  propensity_model <- glm(
+  propensity_model <- stats::glm(
     formula = propensity_formula,
     family = "binomial",
     data = data
   )
 
-  prop_score <- predict(propensity_model, type = "response")
+  prop_score <- stats::predict(propensity_model, type = "response")
   prob_trt <- ifelse(data[[A]] == 1, prop_score, 1 - prop_score)
   data$ipw <- 1 / prob_trt
 
   data0 <- data[data[[A]] == 0, ]
   data1 <- data[data[[A]] == 1, ]
 
-  oe0 <- weighted.mean(data[data[[A]] == 0, Y_column_name], data[data[[A]] == 0, "ipw"]) /
+  oe0 <- stats::weighted.mean(data[data[[A]] == 0, Y_column_name], data[data[[A]] == 0, "ipw"]) /
     mean(data$CF0)
-  oe1 <- weighted.mean(data[data[[A]] == 1, Y_column_name], data[data[[A]] == 1, "ipw"]) /
+  oe1 <- stats::weighted.mean(data[data[[A]] == 1, Y_column_name], data[data[[A]] == 1, "ipw"]) /
     mean(data$CF1)
   oe_observed <- mean(data[[Y_column_name]]) / mean(prediction_under_observed_trt)
 

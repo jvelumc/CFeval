@@ -18,11 +18,11 @@
 #' df_dev <- build_data(1000)
 build_data <- function(n) {
   df <- data.frame(id = 1:n)
-  df$L <- rnorm(n)
-  df$A <- rbinom(n, 1, plogis(df$L))
-  df$P <- rnorm(n)
-  df$Y0 <- rbinom(n, 1, plogis(0.5 + df$L + 1.25 * df$P))
-  df$Y1 <- rbinom(n, 1, plogis(0.5 + df$L + 1.25 * df$P - 0.6))
+  df$L <- stats::rnorm(n)
+  df$A <- stats::rbinom(n, 1, stats::plogis(df$L))
+  df$P <- stats::rnorm(n)
+  df$Y0 <- stats::rbinom(n, 1, stats::plogis(0.5 + df$L + 1.25 * df$P))
+  df$Y1 <- stats::rbinom(n, 1, stats::plogis(0.5 + df$L + 1.25 * df$P - 0.6))
   df$Y <- ifelse(df$A == 1, df$Y1, df$Y0)
   return(df)
 }
@@ -41,7 +41,7 @@ build_data <- function(n) {
 #' @export
 #'
 #' @examples
-#' df_dev <- build_data()
+#' df_dev <- build_data(1000)
 #' causal_model <- build_causal_model(df_dev)
 #' summary(causal_model)
 #' # Compare this to the 'naive' model
@@ -50,10 +50,10 @@ build_data <- function(n) {
 #' # In the naive model, treatment increases the risk due to the confounding of L.
 #' # This has been adjusted for appropriately in the causal model.
 build_causal_model <- function(data) {
-  propensity_model <- glm(A ~ L, family = "binomial", data = data)
-  prop_score <- predict(propensity_model, type = "response")
+  propensity_model <- stats::glm(A ~ L, family = "binomial", data = data)
+  prop_score <- stats::predict(propensity_model, type = "response")
   prob_trt <- ifelse(data$A == 1, prop_score, 1 - prop_score)
-  data$ipw <- 1 / prob_trt
+  ipw <- 1 / prob_trt
 
-  glm(Y ~ A + P, family = "binomial", data = data, weights = ipw)
+  stats::glm(Y ~ A + P, family = "binomial", data = data, weights = ipw)
 }
