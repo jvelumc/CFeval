@@ -15,5 +15,30 @@ calibration_weighted <- function(outcomes, predictions, treatments,
 
   oe_ratio <- observed/expected
 
+  if (plot != FALSE) {
+    n_breaks <- 8
+
+    cal <- data.frame(A = treatments, Y = outcomes, ipw = weights, pred = predictions)
+    cal <- cal[order(predictions), ]
+    cal$group <- cut(cal$pred, breaks = 8, label = F)
+
+    mean_preds <- tapply(cal$pred, cal$group, mean)
+    cal_trt <- cal[cal$A == treatment_of_interest, ]
+    mean_obs <- tapply(
+      X = cal_trt,
+      INDEX = cal_trt$group,
+      FUN = function(x) stats::weighted.mean(x$Y, x$ipw)
+    )
+
+    generate_calibration_plot <- function(mean_preds, mean_obs, ti) {
+      plot(mean_preds, mean_obs, type = "o", xlim = c(0,1), ylim = c(0,1),
+           xlab = "Predicted risk", ylab = "Counterfactual observed",
+           main = paste0("Calibration plot had everyone followed treatment ", ti))
+      abline(0, 1, col = "red")
+    }
+
+    cal_plot <- generate_calibration_plot(mean_preds, mean_obs, treatment_of_interest)
+  }
+
   return(oe_ratio)
 }

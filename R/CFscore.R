@@ -1,3 +1,10 @@
+predict_CF <- function(model, data, A_column, CF_treatment) {
+  # predict outcome probabilities for all patients, setting their treatment
+  # to CF_treatment
+  data[[A_column]] <- CF_treatment
+  stats::predict(model, newdata = data, type = "response")
+}
+
 #' Assess counterfactual performance of a model capable of predictions under
 #' interventions
 #'
@@ -26,15 +33,8 @@ CFscore <- function(data, model, Y_column_name, propensity_formula, quiet_mode =
   A <- all.vars(propensity_formula)[1]
   confounding_set <- all.vars(propensity_formula)[-1]
 
-  predict_CF <- function(model, data, CF_treatment) {
-    # predict outcome probabilities for all patients, setting their treatment
-    # to CF_treatment
-    data[[A]] <- CF_treatment
-    stats::predict(model, newdata = data, type = "response")
-  }
-
-  data$CF0 <- predict_CF(model, data, 0)
-  data$CF1 <- predict_CF(model, data, 1)
+  data$CF0 <- predict_CF(model, data, A, 0)
+  data$CF1 <- predict_CF(model, data, A, 1)
   prediction_under_observed_trt <- stats::predict(model, newdata = data, type = "response")
 
   propensity_model <- stats::glm(
