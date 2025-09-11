@@ -1,3 +1,26 @@
+#' Assess counterfactual performance of a model capable of predictions under
+#' interventions
+#'
+#' @param data A data.frame on which the model is to be validated.
+#' @param model A glm (lm?) which can make predictions under interventions.
+#' @param Y_column_name The observed outcome column of the data.
+#' @param propensity_formula A formula used to estimate the inverse-probability
+#'   weights for the validation data. Treatment variable should be on the left
+#'   hand side, all confounders on the right hand side. It is possible that
+#'   there is a different set of confounders in the validation dataset compared
+#'   to the model-development dataset.
+#' @param quiet_mode Set to TRUE to avoid printing all assumptions.
+#'
+#' @returns A list of performance measures (Brier, Observed/Expected, AUC) of
+#'   the model on observed data (naive) and counterfactual data, where each
+#'   subject is assigned to both treatment options.
+#' @export
+#'
+#' @examples
+#' df_dev <- build_data(5000)
+#' causal_model <- build_causal_model(df_dev)
+#' df_val <- build_data(2000)
+#' CFscore(df_val, causal_model, "Y", A ~ L)
 CFscore <- function(data, model, Y_column_name, propensity_formula, quiet_mode = FALSE) {
 
   A <- all.vars(propensity_formula)[1]
