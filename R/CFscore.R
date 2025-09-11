@@ -108,12 +108,12 @@ CFscore <- function(data, model, Y_column_name, propensity_formula, quiet_mode =
   }
   print(as.data.frame(results))
   if (!quiet_mode) {
-    cat("\nNaive performance is the model performance on the observed data.\n")
+    cat("\nNaive performance is the model performance on the observed validation data.\n")
     cat("CF0/CF1 is the estimated model performance on a CF dataset where everyone was untreated/treated, respectively.\n")
   }
 
   if (quiet_mode) {
-    return(results)
+    return(invisible(results))
   } else {
     # we already printed results in non-quiet mode, so return invisible
     return(invisible(results))

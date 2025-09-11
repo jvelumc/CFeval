@@ -31,17 +31,23 @@ Simulate some example data for binary outcome Y and (point) treatment A,
 confounded by a variable L. Variable P is a prognostic variable for only the
 outcome. The treatment reduces the risk on a bad outcome (Y = 1) in this simulated 
 example. 
+![DAG for toy example](dag.png)
+
 ```{r example}
 library(CFeval)
 df_dev <- build_data(5000)
+
 # Fitting a logistic regression model on this data without accounting for the
 # confounder L results in a model where treatment apparently increases the risk
 # on the outcome
+
 naive_model <- glm(Y ~ A + P, family = "binomial", data = df_dev)
 summary(naive_model)
+
 # Fitting a model using IP-weighting to account for the confounder results in a
 # model where treatment decreases the risk on the outcome, which we know to be
 # true in our simulated data
+
 causal_model <- build_causal_model(df_dev)
 summary(causal_model)
 ```

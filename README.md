@@ -25,14 +25,16 @@ pak::pak("jvelumc/CFscore")
 Simulate some example data for binary outcome Y and (point) treatment A,
 confounded by a variable L. Variable P is a prognostic variable for only
 the outcome. The treatment reduces the risk on a bad outcome (Y = 1) in
-this simulated example.
+this simulated example. ![DAG for toy example](dag.png)
 
 ``` r
 library(CFeval)
 df_dev <- build_data(5000)
+
 # Fitting a logistic regression model on this data without accounting for the
 # confounder L results in a model where treatment apparently increases the risk
 # on the outcome
+
 naive_model <- glm(Y ~ A + P, family = "binomial", data = df_dev)
 summary(naive_model)
 #> 
@@ -41,22 +43,24 @@ summary(naive_model)
 #> 
 #> Coefficients:
 #>             Estimate Std. Error z value Pr(>|z|)    
-#> (Intercept)  0.06417    0.04436   1.446 0.148041    
-#> A            0.22202    0.06337   3.504 0.000459 ***
-#> P            1.06759    0.03803  28.076  < 2e-16 ***
+#> (Intercept)  0.09126    0.04528   2.015   0.0439 *  
+#> A            0.16056    0.06377   2.518   0.0118 *  
+#> P            1.11315    0.03873  28.743   <2e-16 ***
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> 
 #> (Dispersion parameter for binomial family taken to be 1)
 #> 
 #>     Null deviance: 6900.7  on 4999  degrees of freedom
-#> Residual deviance: 5833.4  on 4997  degrees of freedom
-#> AIC: 5839.4
+#> Residual deviance: 5768.6  on 4997  degrees of freedom
+#> AIC: 5774.6
 #> 
 #> Number of Fisher Scoring iterations: 4
+
 # Fitting a model using IP-weighting to account for the confounder results in a
 # model where treatment decreases the risk on the outcome, which we know to be
 # true in our simulated data
+
 causal_model <- build_causal_model(df_dev)
 #> Warning in eval(family$initialize): non-integer #successes in a binomial glm!
 summary(causal_model)
@@ -67,17 +71,17 @@ summary(causal_model)
 #> 
 #> Coefficients:
 #>             Estimate Std. Error z value Pr(>|z|)    
-#> (Intercept)  0.43181    0.03174   13.61   <2e-16 ***
-#> A           -0.53077    0.04449  -11.93   <2e-16 ***
-#> P            0.98672    0.02604   37.89   <2e-16 ***
+#> (Intercept)  0.44902    0.03212   13.98   <2e-16 ***
+#> A           -0.55306    0.04511  -12.26   <2e-16 ***
+#> P            1.05795    0.02663   39.73   <2e-16 ***
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> 
 #> (Dispersion parameter for binomial family taken to be 1)
 #> 
-#>     Null deviance: 13861  on 4999  degrees of freedom
-#> Residual deviance: 11878  on 4997  degrees of freedom
-#> AIC: 11542
+#>     Null deviance: 13869  on 4999  degrees of freedom
+#> Residual deviance: 11663  on 4997  degrees of freedom
+#> AIC: 11345
 #> 
 #> Number of Fisher Scoring iterations: 4
 ```
@@ -114,11 +118,11 @@ CFscore(
 #> 
 #> results:
 #>        Metric     Naive       CF0       CF1
-#> 1   O/E ratio 1.0148482 1.0386944 1.0174379
-#> 2         AUC 0.7366388 0.7372359 0.7591169
-#> 3 Brier score 0.2067991 0.1983917 0.1992677
+#> 1   O/E ratio 0.9961310 0.9907166 0.9582589
+#> 2         AUC 0.7315905 0.7483907 0.7319487
+#> 3 Brier score 0.2089668 0.1987021 0.2088401
 #> 
-#> Naive performance is the model performance on the observed data.
+#> Naive performance is the model performance on the observed validation data.
 #> CF0/CF1 is the estimated model performance on a CF dataset where everyone was untreated/treated, respectively.
 ```
 
@@ -133,18 +137,7 @@ CFscore(
   quiet_mode = TRUE # hides all the additional output.
 )
 #>        Metric     Naive       CF0       CF1
-#> 1   O/E ratio 1.0128039 1.1938720 0.8739003
-#> 2         AUC 0.7486733 0.7372359 0.7591169
-#> 3 Brier score 0.2022334 0.2078994 0.2045123
-#> $Metric
-#> [1] "O/E ratio"   "AUC"         "Brier score"
-#> 
-#> $Naive
-#> [1] 1.0128039 0.7486733 0.2022334
-#> 
-#> $CF0
-#> [1] 1.1938720 0.7372359 0.2078994
-#> 
-#> $CF1
-#> [1] 0.8739003 0.7591169 0.2045123
+#> 1   O/E ratio 1.0004983 1.1296686 0.8336038
+#> 2         AUC 0.7452893 0.7483907 0.7319487
+#> 3 Brier score 0.2040223 0.2031305 0.2165036
 ```
