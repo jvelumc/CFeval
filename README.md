@@ -36,11 +36,13 @@ example</figcaption>
 ``` r
 library(CFeval)
 df_dev <- build_data(5000)
+```
 
-# Fitting a logistic regression model on this data without accounting for the
-# confounder L results in a model where treatment apparently increases the risk
-# on the outcome
+Fitting a logistic regression model on this data without accounting for
+the confounder L results in a model where treatment apparently increases
+the risk on the outcome
 
+``` r
 naive_model <- glm(Y ~ A + P, family = "binomial", data = df_dev)
 summary(naive_model)
 #> 
@@ -62,11 +64,13 @@ summary(naive_model)
 #> AIC: 5752.9
 #> 
 #> Number of Fisher Scoring iterations: 4
+```
 
-# Fitting a model using IP-weighting to account for the confounder results in a
-# model where treatment decreases the risk on the outcome, which we know to be
-# true in our simulated data
+Fitting a model using IP-weighting to account for the confounder results
+in a model where treatment decreases the risk on the outcome, which we
+know to be true in our simulated data
 
+``` r
 causal_model <- build_causal_model(df_dev)
 #> Warning in eval(family$initialize): non-integer #successes in a binomial glm!
 summary(causal_model)
