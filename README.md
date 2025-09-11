@@ -49,19 +49,19 @@ summary(naive_model)
 #> 
 #> Coefficients:
 #>             Estimate Std. Error z value Pr(>|z|)    
-#> (Intercept)  0.04102    0.04443   0.923    0.356    
-#> A            0.24973    0.06306   3.960 7.49e-05 ***
-#> P            1.07333    0.03889  27.601  < 2e-16 ***
+#> (Intercept)  0.11397    0.04514   2.525  0.01157 *  
+#> A            0.20486    0.06394   3.204  0.00135 ** 
+#> P            1.13624    0.03941  28.828  < 2e-16 ***
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> 
 #> (Dispersion parameter for binomial family taken to be 1)
 #> 
-#>     Null deviance: 6906.1  on 4999  degrees of freedom
-#> Residual deviance: 5883.2  on 4997  degrees of freedom
-#> AIC: 5889.2
+#>     Null deviance: 6897.8  on 4999  degrees of freedom
+#> Residual deviance: 5746.9  on 4997  degrees of freedom
+#> AIC: 5752.9
 #> 
-#> Number of Fisher Scoring iterations: 3
+#> Number of Fisher Scoring iterations: 4
 
 # Fitting a model using IP-weighting to account for the confounder results in a
 # model where treatment decreases the risk on the outcome, which we know to be
@@ -77,17 +77,17 @@ summary(causal_model)
 #> 
 #> Coefficients:
 #>             Estimate Std. Error z value Pr(>|z|)    
-#> (Intercept)  0.35664    0.03146   11.34   <2e-16 ***
-#> A           -0.45925    0.04415  -10.40   <2e-16 ***
-#> P            0.99758    0.02661   37.49   <2e-16 ***
+#> (Intercept)  0.43502    0.03222   13.50   <2e-16 ***
+#> A           -0.45611    0.04532  -10.06   <2e-16 ***
+#> P            1.11034    0.02763   40.19   <2e-16 ***
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> 
 #> (Dispersion parameter for binomial family taken to be 1)
 #> 
-#>     Null deviance: 13894  on 4999  degrees of freedom
-#> Residual deviance: 11986  on 4997  degrees of freedom
-#> AIC: 11744
+#>     Null deviance: 13788  on 4999  degrees of freedom
+#> Residual deviance: 11517  on 4997  degrees of freedom
+#> AIC: 11282
 #> 
 #> Number of Fisher Scoring iterations: 4
 ```
@@ -124,9 +124,9 @@ CFscore(
 #> 
 #> results:
 #>        Metric     Naive       CF0       CF1
-#> 1   O/E ratio 1.0086552 1.0362503 1.0009945
-#> 2         AUC 0.7492459 0.7672527 0.7453966
-#> 3 Brier score 0.2025040 0.1909660 0.2036217
+#> 1   O/E ratio 0.9988035 1.0028658 0.9905755
+#> 2         AUC 0.7334947 0.7530103 0.7255930
+#> 3 Brier score 0.2086267 0.1972703 0.2117189
 #> 
 #> Naive performance is the model performance on the observed validation data.
 #> CF0/CF1 is the estimated model performance on a CF dataset where everyone was untreated/treated, respectively.
@@ -143,7 +143,7 @@ CFscore(
   quiet_mode = TRUE # hides all the additional output.
 )
 #>        Metric     Naive       CF0       CF1
-#> 1   O/E ratio 0.9951249 1.1702066 0.8575212
-#> 2         AUC 0.7573108 0.7672527 0.7453966
-#> 3 Brier score 0.1991375 0.1978137 0.2101898
+#> 1   O/E ratio 0.9976336 1.1261003 0.8718221
+#> 2         AUC 0.7467057 0.7530103 0.7255930
+#> 3 Brier score 0.2034472 0.2014497 0.2182442
 ```
