@@ -25,7 +25,13 @@ pak::pak("jvelumc/CFscore")
 Simulate some example data for binary outcome Y and (point) treatment A,
 confounded by a variable L. Variable P is a prognostic variable for only
 the outcome. The treatment reduces the risk on a bad outcome (Y = 1) in
-this simulated example. ![DAG for toy example](dag.png)
+this simulated example.
+
+<figure>
+<img src="dag.png" alt="Figure 1. DAG for toy example" />
+<figcaption aria-hidden="true">Figure 1. DAG for toy
+example</figcaption>
+</figure>
 
 ``` r
 library(CFeval)
@@ -43,17 +49,17 @@ summary(naive_model)
 #> 
 #> Coefficients:
 #>             Estimate Std. Error z value Pr(>|z|)    
-#> (Intercept)  0.09126    0.04528   2.015   0.0439 *  
-#> A            0.16056    0.06377   2.518   0.0118 *  
-#> P            1.11315    0.03873  28.743   <2e-16 ***
+#> (Intercept)  0.04868    0.04447   1.095  0.27362    
+#> A            0.18633    0.06330   2.944  0.00324 ** 
+#> P            1.10921    0.03929  28.231  < 2e-16 ***
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> 
 #> (Dispersion parameter for binomial family taken to be 1)
 #> 
-#>     Null deviance: 6900.7  on 4999  degrees of freedom
-#> Residual deviance: 5768.6  on 4997  degrees of freedom
-#> AIC: 5774.6
+#>     Null deviance: 6922.8  on 4999  degrees of freedom
+#> Residual deviance: 5835.6  on 4997  degrees of freedom
+#> AIC: 5841.6
 #> 
 #> Number of Fisher Scoring iterations: 4
 
@@ -71,17 +77,17 @@ summary(causal_model)
 #> 
 #> Coefficients:
 #>             Estimate Std. Error z value Pr(>|z|)    
-#> (Intercept)  0.44902    0.03212   13.98   <2e-16 ***
-#> A           -0.55306    0.04511  -12.26   <2e-16 ***
-#> P            1.05795    0.02663   39.73   <2e-16 ***
+#> (Intercept)  0.38766    0.03183   12.18   <2e-16 ***
+#> A           -0.47651    0.04483  -10.63   <2e-16 ***
+#> P            1.08766    0.02761   39.39   <2e-16 ***
 #> ---
 #> Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 #> 
 #> (Dispersion parameter for binomial family taken to be 1)
 #> 
-#>     Null deviance: 13869  on 4999  degrees of freedom
-#> Residual deviance: 11663  on 4997  degrees of freedom
-#> AIC: 11345
+#>     Null deviance: 13871  on 4999  degrees of freedom
+#> Residual deviance: 11703  on 4997  degrees of freedom
+#> AIC: 11449
 #> 
 #> Number of Fisher Scoring iterations: 4
 ```
@@ -118,9 +124,9 @@ CFscore(
 #> 
 #> results:
 #>        Metric     Naive       CF0       CF1
-#> 1   O/E ratio 0.9961310 0.9907166 0.9582589
-#> 2         AUC 0.7315905 0.7483907 0.7319487
-#> 3 Brier score 0.2089668 0.1987021 0.2088401
+#> 1   O/E ratio 1.0058825 0.9768355 1.0013461
+#> 2         AUC 0.7328965 0.7366926 0.7531202
+#> 3 Brier score 0.2083676 0.2055890 0.2010178
 #> 
 #> Naive performance is the model performance on the observed validation data.
 #> CF0/CF1 is the estimated model performance on a CF dataset where everyone was untreated/treated, respectively.
@@ -137,7 +143,7 @@ CFscore(
   quiet_mode = TRUE # hides all the additional output.
 )
 #>        Metric     Naive       CF0       CF1
-#> 1   O/E ratio 1.0004983 1.1296686 0.8336038
-#> 2         AUC 0.7452893 0.7483907 0.7319487
-#> 3 Brier score 0.2040223 0.2031305 0.2165036
+#> 1   O/E ratio 1.0098720 1.1077077 0.8819576
+#> 2         AUC 0.7499754 0.7366926 0.7531202
+#> 3 Brier score 0.2021355 0.2098990 0.2061292
 ```
