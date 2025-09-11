@@ -11,8 +11,9 @@ van Geloven, DOI 10.1097/EDE.0000000000001713). This R package
 facilitates assessing counterfactual performance of interventional
 predictions.
 
-## Installation You can install the development version of CFeval from
+## Installation
 
+You can install the development version of CFeval from
 [GitHub](https://github.com/) with:
 
 ``` r
