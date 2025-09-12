@@ -53,7 +53,7 @@ assumptions <- function(t, confounders) {
   }
 
   confounders_formatted <- paste0(confounders, collapse = ", ")
-  pp("Estimating the performance of the prediction model in a counterfactual
+  pp("Estimation of the performance of the prediction model in a counterfactual
      (CF) dataset where everyone's treatment was set to ",
      t_formatted, ".")
   pp("The following assumptions must be satisfied for correct inference:")
@@ -94,7 +94,8 @@ assumptions <- function(t, confounders) {
 #' )
 #' df_val <- build_data(2000)
 #' CFscore(df_val, causal_model, "Y", A ~ L)
-CFscore <- function(data, model, Y_column_name, propensity_formula, treatments, quiet_mode = FALSE) {
+CFscore <- function(data, model, Y_column_name, propensity_formula, treatments,
+                    quiet_mode = FALSE) {
 
   A <- all.vars(propensity_formula)[1]
   confounding_set <- all.vars(propensity_formula)[-1]
@@ -107,46 +108,21 @@ CFscore <- function(data, model, Y_column_name, propensity_formula, treatments, 
       CFscore_undertrt(data, model, Y_column_name, A, ip, trt = x)
     }
   )
-  print(assumptions(treatments, confounding_set))
-  return(results)
-  #
-  # resultsDF <- data.frame(
-  #   "Metric" = c("O/E ratio", "AUC", "Brier score"),
-  #   "Naive" = c(oe_observed, auc_observed, brier_observed),
-  #   "CF0" = c(oe0, auc0, brier0),
-  #   "CF1" = c(oe1, auc1, brier1)
-  # )
-  #
-  # resultsList <- as.list(resultsDF)
-  #
-  # resultsList$plot0 <- calibration0$plot
-  # resultsList$plot1 <- calibration1$plot
-  #
-  # if (!quiet_mode) {
-  #   print("Estimating the performance of the prediction model in a counterfactual (CF) dataset where everyone received treatment and a CF dataset where nobody received treatment.")
-  #
-  #   print("The following assumptions must be satisfied for correct inference:")
-  #
-  #   print(paste0("[1] Conditional exchangeability requires that {", paste0(confounding_set, collapse = ", "), "} is sufficient to adjust for confounding and selection bias between ", A, " and ", Y_column_name, "."))
-  #
-  #   print("[2] Positivity (Assess IPW in the output with $weights)")
-  #
-  #   print("[3] Consistency")
-  #
-  #   print("[4] No interference")
-  #
-  #   print("[5] No measurement error")
-  #
-  #   print("[6] Correctly specified propensity formula")
-  #
-  #   cat("\nresults:\n")
-  #
-  # }
-  # print(resultsDF)
-  # if (!quiet_mode) {
-  #   cat("\nNaive performance is the model performance on the observed validation data.\n")
-  #   cat("CF0/CF1 is the estimated model performance on a CF dataset where everyone was untreated/treated, respectively.\n")
-  # }
+  names(results) <- lapply(
+    X = treatments,
+    FUN = function(x) paste0("CF", x)
+  )
 
-  return(resultsList)
+  results$treatments <- treatments
+  results$confounders <- confounding_set
+
+  class(results) <- "cfscore"
+  results
 }
+
+
+#' @export
+print.cfscore <- function(x) {
+  assumptions(x$treatments, x$confounding_set)
+}
+

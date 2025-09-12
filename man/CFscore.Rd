@@ -39,8 +39,12 @@ Assess counterfactual performance of a model capable of predictions under
 interventions
 }
 \examples{
-df_dev <- build_data(5000)
-causal_model <- build_causal_model(df_dev)
+causal_model <- glm(
+  Y ~ A + P,
+  family = "binomial",
+  data = df_dev,
+  weights = ip_weights(df_dev, A ~ L)
+)
 df_val <- build_data(2000)
 CFscore(df_val, causal_model, "Y", A ~ L)
 }
