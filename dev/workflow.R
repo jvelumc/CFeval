@@ -4,16 +4,8 @@ causal_model <- glm(Y ~ A + P, family = "binomial", data = df_dev,
 
 a <- CFscore(df_val, causal_model, "Y", A ~ L, list(0, 1))
 
+a$CF0$calibration$plot()
+a$CF1$calibration$plot()
 
-print.cfscore(a)
-
-
-
-
-a <- c(1,2,3)
-class(a) <- "mijnclass"
-
-
-
+plot(a, trt = list(0,1))
 print(a)
-a

@@ -5,21 +5,15 @@
 \title{Assess counterfactual performance of a model capable of predictions under
 interventions}
 \usage{
-CFscore(
-  data,
-  model,
-  Y_column_name,
-  propensity_formula,
-  treatments,
-  quiet_mode = FALSE
-)
+CFscore(data, model, Y, propensity_formula, treatments)
 }
 \arguments{
 \item{data}{A data.frame on which the model is to be validated.}
 
 \item{model}{A glm (lm?) which can make predictions under interventions.}
 
-\item{Y_column_name}{The observed outcome column of the data.}
+\item{Y}{A character string indicating the name of the observed outcome
+column in data, or a numeric vector of the observed outcomes.}
 
 \item{propensity_formula}{A formula used to estimate the inverse-probability
 weights for the validation data. Treatment variable should be on the left
@@ -27,7 +21,8 @@ hand side, all confounders on the right hand side. It is possible that
 there is a different set of confounders in the validation dataset compared
 to the model-development dataset.}
 
-\item{quiet_mode}{Set to TRUE to avoid printing all assumptions.}
+\item{treatments}{A list of all treatments for which the counterfactual
+perormance measures should be evaluated.}
 }
 \value{
 A list of performance measures (Brier, Observed/Expected, AUC) of
@@ -45,6 +40,5 @@ causal_model <- glm(
   data = df_dev,
   weights = ip_weights(df_dev, A ~ L)
 )
-df_val <- build_data(2000)
-CFscore(df_val, causal_model, "Y", A ~ L)
+CFscore(df_val, causal_model, "Y", A ~ L, treatments = list(0,1))
 }
