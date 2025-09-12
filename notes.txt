@@ -1,0 +1,3 @@
+- Should we allow for treatment agnostic models? I think yes, but throw a warning
+that this is probably not smart.
+

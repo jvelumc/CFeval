@@ -39,7 +39,13 @@ CFscore_undertrt <- function(data, model, Y, A_column_name, ipw, trt) {
 #' interventions
 #'
 #' @param data A data.frame on which the model is to be validated.
-#' @param model A glm (lm?) which can make predictions under interventions.
+#' @param model A glm (lm?) which can make predictions under interventions which
+#'   has treatment as a predictor, or a list of glm's for each specified
+#'   treatment in the treatments variable. Either model or predictions must be
+#'   given.
+#' @param predictions A numeric vector of predictions under intervention, or a
+#'   list of numeric vectors of predictions under different interventions as
+#'   specified by treatments variable. Either model or predictions must be given
 #' @param Y A character string indicating the name of the observed outcome
 #'   column in data, or a numeric vector of the observed outcomes.
 #' @param propensity_formula A formula used to estimate the inverse-probability
@@ -63,7 +69,19 @@ CFscore_undertrt <- function(data, model, Y, A_column_name, ipw, trt) {
 #'   weights = ip_weights(df_dev, A ~ L)
 #' )
 #' CFscore(df_val, causal_model, "Y", A ~ L, treatments = list(0,1))
-CFscore <- function(data, model, Y, propensity_formula, treatments) {
+CFscore <- function(data, model, predictions, Y, propensity_formula, treatments) {
+
+  n_t <- length(treatments)
+  n_models <- ifelse("list" %in% class(model), length(model), 1)
+
+  stopifnot(
+    "Either model or predictions must be specified, and not both" =
+      xor(missing(model), missing(predictions)),
+    "There should be 1 model or a model for each treatment value" =
+      missing(model) || n_models %in% c(1, n_t),
+    "There should be 1 prediction vector or a prediction vector for each treatment value" =
+      missing(predictions) || length(predictions) %in% c(1, n_t)
+  )
 
   if (is.character(Y)) {
     Y <- data[[Y]]

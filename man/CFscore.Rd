@@ -5,12 +5,19 @@
 \title{Assess counterfactual performance of a model capable of predictions under
 interventions}
 \usage{
-CFscore(data, model, Y, propensity_formula, treatments)
+CFscore(data, model, predictions, Y, propensity_formula, treatments)
 }
 \arguments{
 \item{data}{A data.frame on which the model is to be validated.}
 
-\item{model}{A glm (lm?) which can make predictions under interventions.}
+\item{model}{A glm (lm?) which can make predictions under interventions which
+has treatment as a predictor, or a list of glm's for each specified
+treatment in the treatments variable. Either model or predictions must be
+given.}
+
+\item{predictions}{A numeric vector of predictions under intervention, or a
+list of numeric vectors of predictions under different interventions as
+specified by treatments variable. Either model or predictions must be given}
 
 \item{Y}{A character string indicating the name of the observed outcome
 column in data, or a numeric vector of the observed outcomes.}
