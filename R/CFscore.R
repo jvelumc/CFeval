@@ -5,9 +5,36 @@ predict_CF <- function(model, data, A_column, CF_treatment) {
   stats::predict(model, newdata = data, type = "response")
 }
 
-CFscore_undertrt <- function(data, model, A, Y_column_name, propensity_formula, trt) {
-  cf <- predict_CF(model, data, A, trt)
 
+#' @export
+CFscore_undertrt <- function(data, model, Y_column_name, propensity_formula, trt) {
+  A <- all.vars(propensity_formula)[1] # treatment variable
+  cf <- predict_CF(model, data, A, trt) # counterfactuals as estimated by model
+  ip <- ip_weights(data, propensity_formula) # ip weights
+  outcomes <- data[[Y_column_name]] # outcomes
+  trt_ids <- data[[A]] == trt # rows of patients with trt of interest
+
+  calibration <- calibration_weighted(
+    outcomes = data[[Y_column_name]],
+    predictions = data$cf,
+    treatments = data[[A]],
+    treatment_of_interest = trt,
+    weights = data$ip
+  )
+
+  auc <- auc_weighted(
+    outcomes = outcomes[trt_ids],
+    predictions = cf[trt_ids],
+    weights = ip[trt_ids]
+  )
+
+  brier <- brier_weighted(
+    outcomes = outcomes[trt_ids],
+    predictions = cf[trt_ids],
+    weights = ip[trt_ids]
+  )
+
+  list("brier" = brier, "auc" = auc, "calibration" = calibration)
 }
 
 #' Assess counterfactual performance of a model capable of predictions under
