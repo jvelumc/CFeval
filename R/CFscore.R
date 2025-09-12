@@ -7,34 +7,64 @@ predict_CF <- function(model, data, A_column, CF_treatment) {
 
 
 #' @export
-CFscore_undertrt <- function(data, model, Y_column_name, propensity_formula, trt) {
-  A <- all.vars(propensity_formula)[1] # treatment variable
-  cf <- predict_CF(model, data, A, trt) # counterfactuals as estimated by model
-  ip <- ip_weights(data, propensity_formula) # ip weights
+CFscore_undertrt <- function(data, model, Y_column_name, A_column_name, ipw, trt) {
+  cf <- predict_CF(model, data, A_column_name, trt) # counterfactuals as estimated by model
   outcomes <- data[[Y_column_name]] # outcomes
-  trt_ids <- data[[A]] == trt # rows of patients with trt of interest
+  trt_ids <- data[[A_column_name]] == trt # rows of patients with trt of interest
 
   calibration <- calibration_weighted(
     outcomes = data[[Y_column_name]],
-    predictions = data$cf,
-    treatments = data[[A]],
+    predictions = cf,
+    treatments = data[[A_column_name]],
     treatment_of_interest = trt,
-    weights = data$ip
+    weights = ipw
   )
 
   auc <- auc_weighted(
     outcomes = outcomes[trt_ids],
     predictions = cf[trt_ids],
-    weights = ip[trt_ids]
+    weights = ipw[trt_ids]
   )
 
   brier <- brier_weighted(
     outcomes = outcomes[trt_ids],
     predictions = cf[trt_ids],
-    weights = ip[trt_ids]
+    weights = ipw[trt_ids]
   )
 
   list("brier" = brier, "auc" = auc, "calibration" = calibration)
+}
+
+# pretty print, respecting output width, adding \n at the end
+pp <- function(...) {
+  txt <- paste0(c(...), collapse = "")
+  cat(paste0(strwrap(txt), "\n"))
+}
+
+
+assumptions <- function(t, confounders) {
+  n_t <- length(t)
+  if (n_t >= 2) {
+    t_formatted <- paste0(
+      paste0(t[1:(n_t-1)], collapse = ", "), " and ", t[n_t]
+    )
+  } else {
+    t_formatted <- t[[1]]
+  }
+
+  confounders_formatted <- paste0(confounders, collapse = ", ")
+  pp("Estimating the performance of the prediction model in a counterfactual
+     (CF) dataset where everyone's treatment was set to ",
+     t_formatted, ".")
+  pp("The following assumptions must be satisfied for correct inference:")
+  pp(" - Conditional exchangeability requires that {, ", confounders_formatted,
+     "} is sufficient to adjust for confounding and selection bias between
+      treatment and outcome.")
+  pp("- Positivity")
+  pp("- Consistency")
+  pp("- No interference")
+  pp("- No measurement error")
+  pp("- Correctly specified propensity formula")
 }
 
 #' Assess counterfactual performance of a model capable of predictions under
@@ -69,108 +99,54 @@ CFscore <- function(data, model, Y_column_name, propensity_formula, treatments, 
   A <- all.vars(propensity_formula)[1]
   confounding_set <- all.vars(propensity_formula)[-1]
 
-  for (trt in treatments) { # probably lapply
+  ip <- ip_weights(data, propensity_formula)
 
-  }
-
-  data$CF0 <- predict_CF(model, data, A, 0)
-  data$CF1 <- predict_CF(model, data, A, 1)
-  # prediction_under_observed_trt <- stats::predict(model, newdata = data, type = "response")
-
-  propensity_model <- stats::glm(
-    formula = propensity_formula,
-    family = "binomial",
-    data = data
+  results <- lapply(
+    X = treatments,
+    FUN = function(x) {
+      CFscore_undertrt(data, model, Y_column_name, A, ip, trt = x)
+    }
   )
-
-  prop_score <- stats::predict(propensity_model, type = "response")
-  prob_trt <- ifelse(data[[A]] == 1, prop_score, 1 - prop_score)
-  data$ipw <- 1 / prob_trt
-
-  data0 <- data[data[[A]] == 0, ]
-  data1 <- data[data[[A]] == 1, ]
-
-  calibration0 <- calibration_weighted(
-    outcomes = data[[Y_column_name]],
-    predictions = data$CF0,
-    treatments = data[[A]],
-    treatment_of_interest = 0,
-    weights = data$ipw
-  )
-
-  calibration1 <- calibration_weighted(
-    outcomes = data[[Y_column_name]],
-    predictions = data$CF1,
-    treatments = data[[A]],
-    treatment_of_interest = 1,
-    weights = data$ipw
-  )
-
-  oe0 <- calibration0$OEratio
-  oe1 <- calibration1$OEratio
-
-  oe_observed <- mean(data[[Y_column_name]]) / mean(prediction_under_observed_trt)
-
-
-  auc0 <- auc_weighted(
-    outcomes = data0[[Y_column_name]],
-    predictions = data0$CF0,
-    weights = data0$ipw
-  )
-  auc1 <- auc_weighted(
-    outcomes = data1[[Y_column_name]],
-    predictions = data1$CF1,
-    weights = data1$ipw
-  )
-  auc_observed <- auc_weighted(
-    outcomes = data[[Y_column_name]],
-    predictions = prediction_under_observed_trt,
-    weights = rep(1, nrow(data))
-  )
-
-  brier0 <- brier_weighted(data0[[Y_column_name]], data0$CF0, data0$ipw)
-  brier1 <- brier_weighted(data1[[Y_column_name]], data1$CF1, data1$ipw)
-  brier_observed <- brier_weighted(data[[Y_column_name]],
-                                   prediction_under_observed_trt,
-                                   rep(1, nrow(data)))
-
-  resultsDF <- data.frame(
-    "Metric" = c("O/E ratio", "AUC", "Brier score"),
-    "Naive" = c(oe_observed, auc_observed, brier_observed),
-    "CF0" = c(oe0, auc0, brier0),
-    "CF1" = c(oe1, auc1, brier1)
-  )
-
-  resultsList <- as.list(resultsDF)
-
-  resultsList$plot0 <- calibration0$plot
-  resultsList$plot1 <- calibration1$plot
-
-  if (!quiet_mode) {
-    print("Estimating the performance of the prediction model in a counterfactual (CF) dataset where everyone received treatment and a CF dataset where nobody received treatment.")
-
-    print("The following assumptions must be satisfied for correct inference:")
-
-    print(paste0("[1] Conditional exchangeability requires that {", paste0(confounding_set, collapse = ", "), "} is sufficient to adjust for confounding and selection bias between ", A, " and ", Y_column_name, "."))
-
-    print("[2] Positivity (Assess IPW in the output with $weights)")
-
-    print("[3] Consistency")
-
-    print("[4] No interference")
-
-    print("[5] No measurement error")
-
-    print("[6] Correctly specified propensity formula")
-
-    cat("\nresults:\n")
-
-  }
-  print(resultsDF)
-  if (!quiet_mode) {
-    cat("\nNaive performance is the model performance on the observed validation data.\n")
-    cat("CF0/CF1 is the estimated model performance on a CF dataset where everyone was untreated/treated, respectively.\n")
-  }
+  print(assumptions(treatments, confounding_set))
+  return(results)
+  #
+  # resultsDF <- data.frame(
+  #   "Metric" = c("O/E ratio", "AUC", "Brier score"),
+  #   "Naive" = c(oe_observed, auc_observed, brier_observed),
+  #   "CF0" = c(oe0, auc0, brier0),
+  #   "CF1" = c(oe1, auc1, brier1)
+  # )
+  #
+  # resultsList <- as.list(resultsDF)
+  #
+  # resultsList$plot0 <- calibration0$plot
+  # resultsList$plot1 <- calibration1$plot
+  #
+  # if (!quiet_mode) {
+  #   print("Estimating the performance of the prediction model in a counterfactual (CF) dataset where everyone received treatment and a CF dataset where nobody received treatment.")
+  #
+  #   print("The following assumptions must be satisfied for correct inference:")
+  #
+  #   print(paste0("[1] Conditional exchangeability requires that {", paste0(confounding_set, collapse = ", "), "} is sufficient to adjust for confounding and selection bias between ", A, " and ", Y_column_name, "."))
+  #
+  #   print("[2] Positivity (Assess IPW in the output with $weights)")
+  #
+  #   print("[3] Consistency")
+  #
+  #   print("[4] No interference")
+  #
+  #   print("[5] No measurement error")
+  #
+  #   print("[6] Correctly specified propensity formula")
+  #
+  #   cat("\nresults:\n")
+  #
+  # }
+  # print(resultsDF)
+  # if (!quiet_mode) {
+  #   cat("\nNaive performance is the model performance on the observed validation data.\n")
+  #   cat("CF0/CF1 is the estimated model performance on a CF dataset where everyone was untreated/treated, respectively.\n")
+  # }
 
   return(resultsList)
 }
