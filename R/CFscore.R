@@ -50,7 +50,7 @@ CFscore <- function(data, model, Y_column_name, propensity_formula, quiet_mode =
   data0 <- data[data[[A]] == 0, ]
   data1 <- data[data[[A]] == 1, ]
 
-  oe0 <- calibration_weighted(
+  calibration0 <- calibration_weighted(
     outcomes = data[[Y_column_name]],
     predictions = data$CF0,
     treatments = data[[A]],
@@ -58,13 +58,16 @@ CFscore <- function(data, model, Y_column_name, propensity_formula, quiet_mode =
     weights = data$ipw
   )
 
-  oe1 <- calibration_weighted(
+  calibration1 <- calibration_weighted(
     outcomes = data[[Y_column_name]],
     predictions = data$CF1,
     treatments = data[[A]],
     treatment_of_interest = 1,
     weights = data$ipw
   )
+
+  oe0 <- calibration0$OEratio
+  oe1 <- calibration1$OEratio
 
   oe_observed <- mean(data[[Y_column_name]]) / mean(prediction_under_observed_trt)
 
@@ -91,12 +94,17 @@ CFscore <- function(data, model, Y_column_name, propensity_formula, quiet_mode =
                                    prediction_under_observed_trt,
                                    rep(1, nrow(data)))
 
-  results <- list(
+  resultsDF <- data.frame(
     "Metric" = c("O/E ratio", "AUC", "Brier score"),
     "Naive" = c(oe_observed, auc_observed, brier_observed),
     "CF0" = c(oe0, auc0, brier0),
     "CF1" = c(oe1, auc1, brier1)
   )
+
+  resultsList <- as.list(resultsDF)
+
+  resultsList$plot0 <- calibration0$plot
+  resultsList$plot1 <- calibration1$plot
 
   if (!quiet_mode) {
     print("Estimating the performance of the prediction model in a counterfactual (CF) dataset where everyone received treatment and a CF dataset where nobody received treatment.")
@@ -118,16 +126,11 @@ CFscore <- function(data, model, Y_column_name, propensity_formula, quiet_mode =
     cat("\nresults:\n")
 
   }
-  print(as.data.frame(results))
+  print(resultsDF)
   if (!quiet_mode) {
     cat("\nNaive performance is the model performance on the observed validation data.\n")
     cat("CF0/CF1 is the estimated model performance on a CF dataset where everyone was untreated/treated, respectively.\n")
   }
 
-  if (quiet_mode) {
-    return(invisible(results))
-  } else {
-    # we already printed results in non-quiet mode, so return invisible
-    return(invisible(results))
-  }
+  return(resultsList)
 }

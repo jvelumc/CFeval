@@ -15,6 +15,10 @@ calibration_weighted <- function(outcomes, predictions, treatments,
 
   oe_ratio <- observed/expected
 
+  calibration <- list(
+    "OEratio" = oe_ratio
+  )
+
   if (plot != FALSE) {
     n_breaks <- 8
 
@@ -34,11 +38,12 @@ calibration_weighted <- function(outcomes, predictions, treatments,
       plot(mean_preds, mean_obs, type = "o", xlim = c(0,1), ylim = c(0,1),
            xlab = "Predicted risk", ylab = "Counterfactual observed",
            main = paste0("Calibration plot had everyone followed treatment ", ti))
-      abline(0, 1, col = "red")
+      graphics::abline(0, 1, col = "red")
     }
 
-    cal_plot <- generate_calibration_plot(mean_preds, mean_obs, treatment_of_interest)
+    calibration$plot <- function() {
+      generate_calibration_plot(mean_preds, mean_obs, treatment_of_interest)
+    }
   }
-
-  return(oe_ratio)
+  return(calibration)
 }
