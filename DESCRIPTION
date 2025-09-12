@@ -20,3 +20,5 @@ LazyData: true
 RoxygenNote: 7.3.2
 Imports: 
     stats
+Depends: 
+    R (>= 3.5)

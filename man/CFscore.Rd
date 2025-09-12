@@ -5,7 +5,14 @@
 \title{Assess counterfactual performance of a model capable of predictions under
 interventions}
 \usage{
-CFscore(data, model, Y_column_name, propensity_formula, quiet_mode = FALSE)
+CFscore(
+  data,
+  model,
+  Y_column_name,
+  propensity_formula,
+  treatments,
+  quiet_mode = FALSE
+)
 }
 \arguments{
 \item{data}{A data.frame on which the model is to be validated.}

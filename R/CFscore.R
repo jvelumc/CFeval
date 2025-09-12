@@ -5,6 +5,11 @@ predict_CF <- function(model, data, A_column, CF_treatment) {
   stats::predict(model, newdata = data, type = "response")
 }
 
+CFscore_undertrt <- function(data, model, A, Y_column_name, propensity_formula, trt) {
+  cf <- predict_CF(model, data, A, trt)
+
+}
+
 #' Assess counterfactual performance of a model capable of predictions under
 #' interventions
 #'
@@ -24,18 +29,26 @@ predict_CF <- function(model, data, A_column, CF_treatment) {
 #' @export
 #'
 #' @examples
-#' df_dev <- build_data(5000)
-#' causal_model <- build_causal_model(df_dev)
+#' causal_model <- glm(
+#'   Y ~ A + P,
+#'   family = "binomial",
+#'   data = df_dev,
+#'   weights = ip_weights(df_dev, A ~ L)
+#' )
 #' df_val <- build_data(2000)
 #' CFscore(df_val, causal_model, "Y", A ~ L)
-CFscore <- function(data, model, Y_column_name, propensity_formula, quiet_mode = FALSE) {
+CFscore <- function(data, model, Y_column_name, propensity_formula, treatments, quiet_mode = FALSE) {
 
   A <- all.vars(propensity_formula)[1]
   confounding_set <- all.vars(propensity_formula)[-1]
 
+  for (trt in treatments) { # probably lapply
+
+  }
+
   data$CF0 <- predict_CF(model, data, A, 0)
   data$CF1 <- predict_CF(model, data, A, 1)
-  prediction_under_observed_trt <- stats::predict(model, newdata = data, type = "response")
+  # prediction_under_observed_trt <- stats::predict(model, newdata = data, type = "response")
 
   propensity_model <- stats::glm(
     formula = propensity_formula,

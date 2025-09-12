@@ -2,4 +2,4 @@
 
 export(CFscore)
 export(build_causal_model)
-export(build_data)
+export(ip_weights)
