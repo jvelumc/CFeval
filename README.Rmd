@@ -102,6 +102,7 @@ results_naive
 ```{r}
 plot(results_naive)
 ```
+
 ## Other options
 
 Maybe we are only interested in counterfactual performance under level 1

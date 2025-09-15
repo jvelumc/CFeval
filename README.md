@@ -162,7 +162,8 @@ plot(results_naive)
 ```
 
 <img src="man/figures/README-unnamed-chunk-7-1.png" width="100%" /><img src="man/figures/README-unnamed-chunk-7-2.png" width="100%" />
-\## Other options
+
+## Other options
 
 Maybe we are only interested in counterfactual performance under level 1
 
