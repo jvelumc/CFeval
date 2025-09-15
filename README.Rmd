@@ -160,3 +160,9 @@ CFscore(
   treatments = list(0,1)
 )
 ```
+
+We can also assess performance measures on the observed data with the realized treatment values:
+```{r}
+predictions_naive <- predict(naive_model, type = "response", newdata = df_val)
+observed_score(predictions = predictions_naive, Y = df_val$Y)
+```

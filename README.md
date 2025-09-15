@@ -245,3 +245,15 @@ CFscore(
 #> 2   Brier 0.1974358 0.2113294
 #> 3 OEratio 1.0030430 0.9900907
 ```
+
+We can also assess performance measures on the observed data with the
+realized treatment values:
+
+``` r
+predictions_naive <- predict(naive_model, type = "response", newdata = df_val)
+observed_score(predictions = predictions_naive, Y = df_val$Y)
+#>    metric  observed
+#> 1     AUC 0.7467057
+#> 2   Brier 0.2034472
+#> 3 OEratio 0.9976336
+```

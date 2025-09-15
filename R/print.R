@@ -14,8 +14,13 @@ print.cfscore <- function(x, trt = NULL, quiet = TRUE) {
   }
   results <- data.frame("metric" = c("AUC", "Brier", "OEratio"))
   for (t in trt) {
-    col <- paste0("CF", t)
-    results[[col]] <- c(x[[col]]$auc, x[[col]]$brier, x[[col]]$calibration$OEratio)
+    if (t != "observed") {
+      col <- paste0("CF", t)
+      results[[col]] <- c(x[[col]]$auc, x[[col]]$brier, x[[col]]$calibration$OEratio)
+    } else {
+      col <- "observed"
+      results[[col]] <- c(x$auc, x$brier, x$calibration$OEratio)
+    }
   }
   print(results)
 }
@@ -26,7 +31,12 @@ plot.cfscore <- function(x, trt = NULL) {
     trt <- x$treatments
   }
   for (t in trt) {
-    x[[paste0("CF", t)]]$calibration$plot()
+    if (t != "observed") {
+      x[[paste0("CF", t)]]$calibration$plot()
+    }
+    else {
+      x$calibration$plot()
+    }
   }
 }
 

@@ -5,7 +5,17 @@
 \title{Assess counterfactual performance of a model capable of predictions under
 interventions}
 \usage{
-CFscore(data, model, predictions, Y, propensity_formula, ip, A, treatments)
+CFscore(
+  data,
+  model,
+  predictions,
+  Y,
+  propensity_formula,
+  ip,
+  A,
+  treatments,
+  assess_observed = FALSE
+)
 }
 \arguments{
 \item{data}{A data.frame on which the model is to be validated.}
@@ -42,8 +52,8 @@ which the counterfactual perormance measures should be evaluated.}
 }
 \value{
 A list of performance measures (Brier, Observed/Expected, AUC) of
-  the model on observed data (naive) and counterfactual data, where each
-  subject is assigned to both treatment options.
+  the model on counterfactual data, where each subject is assigned to the
+  treatments as given.
 }
 \description{
 Assess counterfactual performance of a model capable of predictions under
@@ -56,5 +66,6 @@ causal_model <- glm(
   data = df_dev,
   weights = ip_weights(df_dev, A ~ L)
 )
-CFscore(df_val, causal_model, "Y", A ~ L, treatments = list(0,1))
+CFscore(data = df_val, model = causal_model, Y = "Y",
+        propensity_formula = A ~ L, treatments = list(0,1))
 }

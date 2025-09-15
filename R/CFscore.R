@@ -33,6 +33,67 @@ CFscore_undertrt <- function(data, cf, Y, A_column_name, ipw, trt) {
   list("brier" = brier, "auc" = auc, "calibration" = calibration)
 }
 
+score_realized_trt <- function(pred, outcomes) {
+  calibration <- calibration(
+    outcomes = outcomes,
+    predictions = pred
+  )
+  auc <- auc_weighted(
+    outcomes = outcomes,
+    predictions = pred,
+    weights = rep(1, length(outcomes))
+  )
+  brier <- brier_weighted(
+    outcomes = outcomes,
+    predictions = pred,
+    weights = rep(1, length(outcomes))
+  )
+  list("brier" = brier, "auc" = auc, "calibration" = calibration)
+}
+
+#' Assess performance of predictions for realized treatment values.
+#'
+#' @param data A data.frame on which the model is to be validated
+#' @param model A glm
+#' @param predictions A numeric vector of predictions. Either this or data AND
+#'   model must be given.
+#' @param Y A numeric vector of observed outcomes, or a character string
+#'   indicating the name of the observed outcomes in the data.
+#'
+#' @returns  A list of performance measures (Brier, Observed/Expected, AUC) of
+#'   the model on observed data
+#' @export
+#'
+#' @examples
+#' model <- glm(
+#'   Y ~ A + P,
+#'   family = "binomial",
+#'   data = df_dev,
+#' )
+#' observed_score(data = df_val, model = model, Y = "Y")
+observed_score <- function(data, model, predictions, Y) {
+  stopifnot(
+    "Either data and model, or predictions must be given" =
+    xor(missing(predictions), ( missing(data) && missing(model) ) ),
+    "Outcomes Y must be numeric or a column name. If the latter, data must
+    be given" = is.numeric(Y) || !missing(data)
+  )
+
+  if (is.character(Y)) {
+    Y <- data[[Y]]
+  }
+
+  if (missing(predictions)) {
+    predictions <- predict(model, newdata = data, type = "response")
+  }
+  results <- score_realized_trt(predictions, Y)
+  class(results) <- "cfscore"
+  results$treatments <- "observed"
+
+  return(results)
+}
+
+
 # input: single element or list of length 1 or length(treatments)
 # output: a list of length treatments, where each element is input, possibly repeated
 make_x_as_list <- function(x, treatments) {
@@ -83,8 +144,8 @@ make_x_as_list <- function(x, treatments) {
 #'   which the counterfactual perormance measures should be evaluated.
 #'
 #' @returns A list of performance measures (Brier, Observed/Expected, AUC) of
-#'   the model on observed data (naive) and counterfactual data, where each
-#'   subject is assigned to both treatment options.
+#'   the model on counterfactual data, where each subject is assigned to the
+#'   treatments as given.
 #' @export
 #'
 #' @examples
@@ -94,9 +155,10 @@ make_x_as_list <- function(x, treatments) {
 #'   data = df_dev,
 #'   weights = ip_weights(df_dev, A ~ L)
 #' )
-#' CFscore(df_val, causal_model, "Y", A ~ L, treatments = list(0,1))
+#' CFscore(data = df_val, model = causal_model, Y = "Y",
+#'         propensity_formula = A ~ L, treatments = list(0,1))
 CFscore <- function(data, model, predictions, Y, propensity_formula,
-                    ip, A, treatments) {
+                    ip, A, treatments, assess_observed = FALSE) {
 
   n_t <- length(treatments)
   if (!missing(model)) {
@@ -104,11 +166,11 @@ CFscore <- function(data, model, predictions, Y, propensity_formula,
   }
   if (!missing(predictions)) {
     if (is.numeric(predictions)) {
-      n_predictions <- 1
+      n_models <- 1
     } else if (is.list(predictions)) {
       stopifnot("Predictions should either be a numeric vector or a list of
                 numeric vectors" = is.numeric(predictions[[1]]))
-      n_predictions <- length(predictions)
+      n_models <- length(predictions)
     } else {
       stop("Predictions should either be a numeric vector or a list of
            numeric vectors.")
@@ -125,7 +187,7 @@ CFscore <- function(data, model, predictions, Y, propensity_formula,
     "There should be 1 model or a model for each treatment value" =
       missing(model) || n_models %in% c(1, n_t),
     "There should be 1 prediction vector or a list of prediction vectors for each treatment value" =
-      missing(predictions) || length(predictions) %in% c(1, n_t),
+      missing(predictions) || n_models %in% c(1, n_t),
     "Either propensity formula or ip must be specified, and not both" =
       xor(missing(propensity_formula), missing(ip)),
     "A must be given if propensity_formula is not specified" =
@@ -165,6 +227,7 @@ CFscore <- function(data, model, predictions, Y, propensity_formula,
     X = treatments,
     FUN = function(x) paste0("CF", x)
   )
+
 
   results$treatments <- treatments
   # results$propensity <- ifelse(missing(propensity_formula), N)
