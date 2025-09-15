@@ -16,10 +16,10 @@ print.cfscore <- function(x, trt = NULL, quiet = TRUE) {
   for (t in trt) {
     if (t != "observed") {
       col <- paste0("CF", t)
-      results[[col]] <- c(x[[col]]$auc, x[[col]]$brier, x[[col]]$calibration$OEratio)
+      results[[col]] <- c(x[[col]]$auc, x[[col]]$brier, x[[col]]$OEratio)
     } else {
       col <- "observed"
-      results[[col]] <- c(x$auc, x$brier, x$calibration$OEratio)
+      results[[col]] <- c(x$auc, x$brier, x$OEratio)
     }
   }
   print(results)
@@ -32,10 +32,10 @@ plot.cfscore <- function(x, trt = NULL) {
   }
   for (t in trt) {
     if (t != "observed") {
-      x[[paste0("CF", t)]]$calibration$plot()
+      x[[paste0("CF", t)]]$calibrationplot()
     }
     else {
-      x$calibration$plot()
+      x$calibrationplot()
     }
   }
 }

@@ -30,7 +30,9 @@ CFscore_undertrt <- function(data, cf, Y, A_column_name, ipw, trt) {
     weights = ipw[trt_ids]
   )
 
-  list("brier" = brier, "auc" = auc, "calibration" = calibration)
+  list("brier" = brier, "auc" = auc,
+       "OEratio" = calibration$OEratio,
+       "calibrationplot" = calibration$plot)
 }
 
 score_realized_trt <- function(pred, outcomes) {
@@ -48,7 +50,9 @@ score_realized_trt <- function(pred, outcomes) {
     predictions = pred,
     weights = rep(1, length(outcomes))
   )
-  list("brier" = brier, "auc" = auc, "calibration" = calibration)
+  list("brier" = brier, "auc" = auc,
+       "OEratio" = calibration$OEratio,
+       "calibrationplot" = calibration$plot)
 }
 
 #' Assess performance of predictions for realized treatment values.
@@ -251,6 +255,10 @@ CFscore <- function(data, model, predictions, Y, propensity_formula,
             trt = treatments[[i]]
           )
         }
+      )
+      names(bs_results) <- lapply(
+        X = treatments,
+        FUN = function(x) paste0("CF", x)
       )
       bs_results
     }
