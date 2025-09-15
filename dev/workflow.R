@@ -15,10 +15,23 @@ CFscore(data = df_val,
         treatments = list(0,1))
 
 CFscore(data = df_val,
+        predictions = list(
+          predict_CF(causal_model, df_val, "A", 0),
+          predict_CF(causal_model, df_val, "A", 1)
+        ),
+        Y = "Y",
+        propensity_formula = A ~ L,
+        treatments = list(0, 1))
+
+
+
+CFscore(data = df_val,
         model = naive_model,
         Y = "Y",
         propensity_formula = A ~ L,
-        treatments = list(0,1))
+        treatments = list(0))
+
+
 
 
 

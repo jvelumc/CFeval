@@ -91,7 +91,21 @@ make_x_as_list <- function(x, treatments) {
 CFscore <- function(data, model, predictions, Y, propensity_formula, treatments) {
 
   n_t <- length(treatments)
-  n_models <- ifelse("list" %in% class(model), length(model), 1)
+  if (!missing(model)) {
+    n_models <- ifelse("list" %in% class(model), length(model), 1)
+  }
+  if (!missing(predictions)) {
+    if (is.numeric(predictions)) {
+      n_predictions <- 1
+    } else if (is.list(predictions)) {
+      stopifnot("Predictions should either be a numeric vector or a list of
+                numeric vectors" = is.numeric(predictions[[1]]))
+      n_predictions <- length(predictions)
+    } else {
+      stop("Predictions should either be a numeric vector or a list of
+           numeric vectors.")
+    }
+  }
 
   stopifnot(
     "Either model or predictions must be specified, and not both" =
