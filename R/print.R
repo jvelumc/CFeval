@@ -5,7 +5,7 @@ pp <- function(...) {
 }
 
 #' @export
-print.cfscore <- function(x) {
+print.cfscore <- function(x, quiet = FALSE) {
   assumptions(x$treatments, x$confounding_set)
 }
 

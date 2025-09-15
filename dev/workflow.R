@@ -3,14 +3,18 @@ causal_model <- glm(Y ~ A + P, family = "binomial", data = df_dev,
                     weights = ip_weights(df_dev, A ~ L))
 
 a <- CFscore(data = df_val,
-             model = list(causal_model, naive_model),
+             model = list(causal_model, causal_model),
              Y = "Y",
              propensity_formula = A ~ L,
-             treatments = list(1,2))
+             treatments = list(0,1))
+
+a <- CFscore(data = df_val,
+             model = naive_model,
+             Y = "Y",
+             propensity_formula = A ~ L,
+             treatments = list(0,1))
 
 
-
-a
 
 a$CF0$calibration$plot()
 a$CF1$calibration$plot()
@@ -31,3 +35,5 @@ stopifnot(
   "test aa" = 1==1,
   "lol bb" = 1==2
 )
+
+make_x_as_list("lol", c(1,2))

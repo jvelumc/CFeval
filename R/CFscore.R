@@ -7,8 +7,7 @@ predict_CF <- function(model, data, A_column, CF_treatment) {
 
 
 #' @export
-CFscore_undertrt <- function(data, model, Y, A_column_name, ipw, trt) {
-  cf <- predict_CF(model, data, A_column_name, trt) # counterfactuals as estimated by model
+CFscore_undertrt <- function(data, cf, Y, A_column_name, ipw, trt) {
   trt_ids <- data[[A_column_name]] == trt # rows of patients with trt of interest
 
   calibration <- calibration_weighted(
@@ -34,6 +33,26 @@ CFscore_undertrt <- function(data, model, Y, A_column_name, ipw, trt) {
   list("brier" = brier, "auc" = auc, "calibration" = calibration)
 }
 
+# input: single element or list of length 1 or length(treatments)
+# output: a list of length treatments, where each element is input, possibly repeated
+make_x_as_list <- function(x, treatments) {
+  n_t <- length(treatments)
+  n_x <- ifelse("list" %in% class(x), length(x), 1) # do we have a list of x or just 1?
+
+  if ("list" %in% class(x)) {
+    if (length(x) == 1) {
+      return(replicate(n_t, x[[1]], simplify = FALSE))
+    } else {
+      stopifnot(
+        "Number of predictions/models is incompatible with number of treatments" =
+          length(x) == n_t
+      )
+      return(x)
+    }
+  } else {
+    return(replicate(n_t, x, simplify = FALSE))
+  }
+}
 
 #' Assess counterfactual performance of a model capable of predictions under
 #' interventions
@@ -79,7 +98,7 @@ CFscore <- function(data, model, predictions, Y, propensity_formula, treatments)
       xor(missing(model), missing(predictions)),
     "There should be 1 model or a model for each treatment value" =
       missing(model) || n_models %in% c(1, n_t),
-    "There should be 1 prediction vector or a prediction vector for each treatment value" =
+    "There should be 1 prediction vector or a list of prediction vectors for each treatment value" =
       missing(predictions) || length(predictions) %in% c(1, n_t)
   )
 
@@ -89,13 +108,22 @@ CFscore <- function(data, model, predictions, Y, propensity_formula, treatments)
 
   A <- all.vars(propensity_formula)[1]
   confounding_set <- all.vars(propensity_formula)[-1]
-
   ip <- ip_weights(data, propensity_formula)
 
+  if (!missing(model)) {
+    model <- make_x_as_list(model, treatments)
+    predictions <- lapply(
+      1:length(model),
+      function(i) predict_CF(model[[i]], data, A, treatments[[i]])
+    )
+  } else {
+    predictions <- make_x_as_list(predictions, treatments)
+  }
+
   results <- lapply(
-    X = treatments,
-    FUN = function(x) {
-      CFscore_undertrt(data, model, Y, A, ip, trt = x)
+    X = 1:length(treatments),
+    FUN = function(i) {
+      CFscore_undertrt(data, predictions[[i]], Y, A, ip, trt = treatments[[i]])
     }
   )
   names(results) <- lapply(
