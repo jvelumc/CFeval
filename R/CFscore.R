@@ -64,16 +64,23 @@ make_x_as_list <- function(x, treatments) {
 #'   given.
 #' @param predictions A numeric vector of predictions under intervention, or a
 #'   list of numeric vectors of predictions under different interventions as
-#'   specified by treatments variable. Either model or predictions must be given
+#'   specified by treatments variable. Either model or predictions must be
+#'   given.
 #' @param Y A character string indicating the name of the observed outcome
 #'   column in data, or a numeric vector of the observed outcomes.
 #' @param propensity_formula A formula used to estimate the inverse-probability
 #'   weights for the validation data. Treatment variable should be on the left
 #'   hand side, all confounders on the right hand side. It is possible that
 #'   there is a different set of confounders in the validation dataset compared
-#'   to the model-development dataset.
-#' @param treatments A list of all treatments for which the counterfactual
-#'   perormance measures should be evaluated.
+#'   to the model-development dataset. Either this or ipw must be given
+#' @param ip The inverse probabilty weights for the validation data. Can be
+#'   either string indicating the name of the ip column in the validation data,
+#'   or a numeric vector of ip-weights.
+#' @param A A character string indicating the name of the realized treatment
+#'   column in data. Must be given if ipw's are specified. It is automatically
+#'   inferred from propensity_formula if given.
+#' @param treatments A treatment level or a list of all treatment levels for
+#'   which the counterfactual perormance measures should be evaluated.
 #'
 #' @returns A list of performance measures (Brier, Observed/Expected, AUC) of
 #'   the model on observed data (naive) and counterfactual data, where each
@@ -88,7 +95,8 @@ make_x_as_list <- function(x, treatments) {
 #'   weights = ip_weights(df_dev, A ~ L)
 #' )
 #' CFscore(df_val, causal_model, "Y", A ~ L, treatments = list(0,1))
-CFscore <- function(data, model, predictions, Y, propensity_formula, treatments) {
+CFscore <- function(data, model, predictions, Y, propensity_formula,
+                    ip, A, treatments) {
 
   n_t <- length(treatments)
   if (!missing(model)) {
@@ -107,22 +115,35 @@ CFscore <- function(data, model, predictions, Y, propensity_formula, treatments)
     }
   }
 
+  if (is.character(Y)) {
+    Y <- data[[Y]]
+  }
+
   stopifnot(
     "Either model or predictions must be specified, and not both" =
       xor(missing(model), missing(predictions)),
     "There should be 1 model or a model for each treatment value" =
       missing(model) || n_models %in% c(1, n_t),
     "There should be 1 prediction vector or a list of prediction vectors for each treatment value" =
-      missing(predictions) || length(predictions) %in% c(1, n_t)
+      missing(predictions) || length(predictions) %in% c(1, n_t),
+    "Either propensity formula or ip must be specified, and not both" =
+      xor(missing(propensity_formula), missing(ip)),
+    "A must be given if propensity_formula is not specified" =
+      !missing(propensity_formula) || !missing(A),
+    "A must be column name (character) of treatment variable in validation data" =
+      missing(A) || is.character(A),
+    "IP weights must be numeric and of same length as outcome" =
+      missing(ip) || ( is.numeric(ip) && length(ip) == length(Y) )
   )
 
-  if (is.character(Y)) {
-    Y <- data[[Y]]
+  if (!missing(propensity_formula)) {
+    if (!missing(A)) {
+      stopifnot("A must be the l.h.s. of propensity formula",
+                A == all.vars(propensity_formula)[1])
+    }
+    A <- all.vars(propensity_formula)[1]
+    ip <- ip_weights(data, propensity_formula)
   }
-
-  A <- all.vars(propensity_formula)[1]
-  confounding_set <- all.vars(propensity_formula)[-1]
-  ip <- ip_weights(data, propensity_formula)
 
   if (!missing(model)) {
     model <- make_x_as_list(model, treatments)
@@ -146,7 +167,8 @@ CFscore <- function(data, model, predictions, Y, propensity_formula, treatments)
   )
 
   results$treatments <- treatments
-  results$confounders <- confounding_set
+  # results$propensity <- ifelse(missing(propensity_formula), N)
+  # results$confounders <- all.vars(propensity_formula)[-1]
 
   class(results) <- "cfscore"
   results
