@@ -16,8 +16,8 @@ CFscore(data = df_val,
 
 CFscore(data = df_val,
         model = causal_model,
-        Y = "Y",
-        ip = ip_weights(df_dev, A ~ L),
+        Y = df_val$Y,
+        ip = ip_weights(df_val, A ~ L),
         A = "A",
         treatments = list(0,1))
 

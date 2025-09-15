@@ -23,21 +23,22 @@ counterfactual performance of interventional predictions.
 ## Installation 
 You can install the development version of CFeval from [GitHub](https://github.com/) with:
 ``` r
-# install.packages("pak")
-pak::pak("jvelumc/CFeval")
+# install.packages("devtools")
+devtools::github("jvelumc/CFeval")
 ```
 ## Toy example
 
 Simulate some example data for binary outcome Y and (point) treatment A,
 confounded by a variable L. Variable P is a prognostic variable for only the
 outcome. The treatment reduces the risk on a bad outcome (Y = 1) in this simulated 
-example. 
+example. The R package contains a 5000 row df_dev and a 4000 row df_val, both 
+simulated as described. 
 
 ![Figure 1. DAG for toy example](man/figures/dag.png)
 
 ```{r example}
 library(CFeval)
-df_dev <- build_data(5000)
+head(df_dev)
 ```
 
 Fitting a logistic regression model on this data without accounting for the
@@ -54,7 +55,8 @@ model where treatment decreases the risk on the outcome, which we know to be
 true in our simulated data
 
 ```{r}
-causal_model <- build_causal_model(df_dev)
+causal_model <- glm(Y ~ A + P, family = "binomial", data = df_dev, 
+                    weights = ip_weights(df_dev, A ~ L))
 summary(causal_model)
 ```
 
@@ -72,23 +74,88 @@ in a validation dataset, printing all assumptions required along the way.
 
 
 ```{r}
-df_val <- build_data(4000)
-CFscore(
+results_causal <- CFscore(
   data = df_val,
   model = causal_model, 
-  Y_column_name = "Y", 
-  propensity_formula = A ~ L
+  Y = "Y", 
+  propensity_formula = A ~ L, 
+  treatments = list(0, 1)
 )
+results_causal
+```
+```{r}
+plot(results_causal)
 ```
 
 Compare that to the counterfactual performance of the naive model:
 ```{r}
-CFscore(
+results_naive <- CFscore(
   data = df_val,
   model = naive_model,
-  Y_column_name = "Y",
+  Y = "Y",
   propensity_formula = A ~ L,
-  quiet_mode = TRUE # hides all the additional output.
+  treatments = list(0,1)
+)
+results_naive
+```
+
+```{r}
+plot(results_naive)
+```
+## Other options
+
+Maybe we are only interested in counterfactual performance under level 1
+```{r}
+CFscore(
+  data = df_val,
+  model = causal_model, 
+  Y = "Y", 
+  propensity_formula = A ~ L, 
+  treatments = 1
 )
 ```
 
+Maybe we have a model for each treatment level
+```{r}
+df_dev$ip <- ip_weights(df_dev, A ~ L)
+model0 <- glm(Y ~ P, family = "binomial", data = df_dev[df_dev$A == 0, ], weights = ip)
+model1 <- glm(Y ~ P, family = "binomial", data = df_dev[df_dev$A == 1, ], weights = ip)
+
+CFscore(
+  data = df_val,
+  model = list(model0, model1),
+  Y = "Y",
+  propensity_formula = A ~ L,
+  treatments = list(0,1)
+)
+```
+We can also give counterfactual predictions to CFscore, instead of models
+```{r}
+cf0 <- predict(model0, newdata = df_val, type = "response")
+cf1 <- predict(model1, newdata = df_val, type = "response")
+
+CFscore(
+  data = df_val,
+  predictions = list(cf0, cf1),
+  Y = "Y",
+  propensity_formula = A ~ L,
+  treatments = list(0,1)
+)
+```
+
+And we can also give it user-specified weights, instead of a propensity formula. 
+```{r}
+prop_model <- glm(A ~ L, family = "binomial", data = df_val)
+prop_score <- predict(prop_model, type = "response")
+prob_trt <- ifelse(df_val$A == 1, prop_score, 1 - prop_score)
+my_ip_weights <- 1 / prob_trt
+  
+CFscore(
+  data = df_val,
+  predictions = list(cf0, cf1),
+  Y = "Y",
+  ip = my_ip_weights,
+  A = "A", #need to specify treatment var, which is normally inferred from propensity formula
+  treatments = list(0,1)
+)
+```
