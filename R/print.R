@@ -5,8 +5,19 @@ pp <- function(...) {
 }
 
 #' @export
-print.cfscore <- function(x, quiet = FALSE) {
-  assumptions(x$treatments, x$confounding_set)
+print.cfscore <- function(x, trt = NULL, quiet = TRUE) {
+  if (!quiet) {
+    assumptions(x$treatments, x$confounding_set)
+  }
+  if (is.null(trt)) {
+    trt <- x$treatments
+  }
+  results <- data.frame("metric" = c("AUC", "Brier", "OEratio"))
+  for (t in trt) {
+    col <- paste0("CF", t)
+    results[[col]] <- c(x[[col]]$auc, x[[col]]$brier, x[[col]]$calibration$OEratio)
+  }
+  print(results)
 }
 
 #' @export
