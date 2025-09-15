@@ -142,6 +142,10 @@ make_x_as_list <- function(x, treatments) {
 #'   inferred from propensity_formula if given.
 #' @param treatments A treatment level or a list of all treatment levels for
 #'   which the counterfactual perormance measures should be evaluated.
+#' @param bootstrap If a 95% CI around performance estimates estimated by
+#'   bootstrappingis desired, this can be achieved by setting this variable to a
+#'   integer indicating the amount of iterations. Argument propensity_formula must
+#'   then be given.
 #'
 #' @returns A list of performance measures (Brier, Observed/Expected, AUC) of
 #'   the model on counterfactual data, where each subject is assigned to the
@@ -158,7 +162,7 @@ make_x_as_list <- function(x, treatments) {
 #' CFscore(data = df_val, model = causal_model, Y = "Y",
 #'         propensity_formula = A ~ L, treatments = list(0,1))
 CFscore <- function(data, model, predictions, Y, propensity_formula,
-                    ip, A, treatments, assess_observed = FALSE) {
+                    ip, A, treatments, bootstrap) {
 
   n_t <- length(treatments)
   if (!missing(model)) {
@@ -195,7 +199,9 @@ CFscore <- function(data, model, predictions, Y, propensity_formula,
     "A must be column name (character) of treatment variable in validation data" =
       missing(A) || is.character(A),
     "IP weights must be numeric and of same length as outcome" =
-      missing(ip) || ( is.numeric(ip) && length(ip) == length(Y) )
+      missing(ip) || ( is.numeric(ip) && length(ip) == length(Y) ),
+    "If we are bootstrapping, propensity formula must be given as this is used
+    in the bootstrap process" = missing(bootstrap) || !missing(propensity_formula)
   )
 
   if (!missing(propensity_formula)) {
@@ -204,7 +210,6 @@ CFscore <- function(data, model, predictions, Y, propensity_formula,
                 A == all.vars(propensity_formula)[1])
     }
     A <- all.vars(propensity_formula)[1]
-    ip <- ip_weights(data, propensity_formula)
   }
 
   if (!missing(model)) {
@@ -217,12 +222,45 @@ CFscore <- function(data, model, predictions, Y, propensity_formula,
     predictions <- make_x_as_list(predictions, treatments)
   }
 
+  if (!missing(propensity_formula)) {
+    ip <- ip_weights(data, propensity_formula)
+  }
+
   results <- lapply(
     X = 1:length(treatments),
     FUN = function(i) {
       CFscore_undertrt(data, predictions[[i]], Y, A, ip, trt = treatments[[i]])
     }
   )
+
+  # bootstrap
+  if (!missing(bootstrap)) {
+    print(bootstrap)
+    bootstrap_iteration <- function() {
+      bs_sample <- sample(nrow(data), size = nrow(data), replace = T)
+      bs_ip <- ip_weights(data[bs_sample, ], propensity_formula)
+      bs_results <- lapply(
+        X = 1:length(treatments),
+        FUN = function(i) {
+          CFscore_undertrt(
+            data = data[bs_sample, ],
+            cf = predictions[[i]][bs_sample],
+            Y = Y[bs_sample],
+            A_column_name = A,
+            ipw = bs_ip,
+            trt = treatments[[i]]
+          )
+        }
+      )
+      bs_results
+    }
+
+
+    b <- lapply(as.list(1:bootstrap), function(x) bootstrap_iteration())
+    return(b)
+
+  }
+
   names(results) <- lapply(
     X = treatments,
     FUN = function(x) paste0("CF", x)
