@@ -4,7 +4,7 @@
 \alias{observed_score}
 \title{Assess performance of predictions for realized treatment values.}
 \usage{
-observed_score(data, model, predictions, Y)
+observed_score(data, model, predictions, Y, plot = TRUE)
 }
 \arguments{
 \item{data}{A data.frame on which the model is to be validated}
@@ -16,6 +16,8 @@ model must be given.}
 
 \item{Y}{A numeric vector of observed outcomes, or a character string
 indicating the name of the observed outcomes in the data.}
+
+\item{plot}{If set to TRUE, generate calibration plot}
 }
 \value{
 A list of performance measures (Brier, Observed/Expected, AUC) of

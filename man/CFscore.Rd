@@ -14,7 +14,8 @@ CFscore(
   ip,
   A,
   treatments,
-  assess_observed = FALSE
+  bootstrap,
+  plot = TRUE
 )
 }
 \arguments{
@@ -49,6 +50,13 @@ inferred from propensity_formula if given.}
 
 \item{treatments}{A treatment level or a list of all treatment levels for
 which the counterfactual perormance measures should be evaluated.}
+
+\item{bootstrap}{If a 95% CI around performance estimates estimated by
+bootstrappingis desired, this can be achieved by setting this variable to a
+integer indicating the amount of iterations. Argument propensity_formula
+must then be given.}
+
+\item{plot}{If set to TRUE, generate calibration plot}
 }
 \value{
 A list of performance measures (Brier, Observed/Expected, AUC) of

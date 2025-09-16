@@ -128,10 +128,10 @@ results_causal <- CFscore(
   treatments = list(0, 1)
 )
 results_causal
-#>    metric       CF0       CF1
-#> 1     AUC 0.7530103 0.7255930
-#> 2   Brier 0.1972703 0.2117189
-#> 3 OEratio 1.0028658 0.9905755
+#>    metric   CF0   CF1
+#> 1   Brier 0.197 0.212
+#> 2     auc 0.753 0.726
+#> 3 OEratio 1.003 0.991
 ```
 
 ``` r
@@ -151,10 +151,10 @@ results_naive <- CFscore(
   treatments = list(0,1)
 )
 results_naive
-#>    metric       CF0       CF1
-#> 1     AUC 0.7530103 0.7255930
-#> 2   Brier 0.2014497 0.2182442
-#> 3 OEratio 1.1261003 0.8718221
+#>    metric   CF0   CF1
+#> 1   Brier 0.201 0.218
+#> 2     auc 0.753 0.726
+#> 3 OEratio 1.126 0.872
 ```
 
 ``` r
@@ -175,10 +175,10 @@ CFscore(
   propensity_formula = A ~ L, 
   treatments = 1
 )
-#>    metric       CF1
-#> 1     AUC 0.7255930
-#> 2   Brier 0.2117189
-#> 3 OEratio 0.9905755
+#>    metric   CF1
+#> 1   Brier 0.212
+#> 2     auc 0.726
+#> 3 OEratio 0.991
 ```
 
 Maybe we have a model for each treatment level
@@ -197,10 +197,10 @@ CFscore(
   propensity_formula = A ~ L,
   treatments = list(0,1)
 )
-#>    metric       CF0       CF1
-#> 1     AUC 0.7530103 0.7255930
-#> 2   Brier 0.1974358 0.2113294
-#> 3 OEratio 1.0030430 0.9900907
+#>    metric   CF0   CF1
+#> 1   Brier 0.197 0.211
+#> 2     auc 0.753 0.726
+#> 3 OEratio 1.003 0.990
 ```
 
 We can also give counterfactual predictions to CFscore, instead of
@@ -217,10 +217,10 @@ CFscore(
   propensity_formula = A ~ L,
   treatments = list(0,1)
 )
-#>    metric       CF0       CF1
-#> 1     AUC 0.7530103 0.7255930
-#> 2   Brier 0.1974358 0.2113294
-#> 3 OEratio 1.0030430 0.9900907
+#>    metric   CF0   CF1
+#> 1   Brier 0.197 0.211
+#> 2     auc 0.753 0.726
+#> 3 OEratio 1.003 0.990
 ```
 
 And we can also give it user-specified weights, instead of a propensity
@@ -240,10 +240,10 @@ CFscore(
   A = "A", #need to specify treatment var, which is normally inferred from propensity formula
   treatments = list(0,1)
 )
-#>    metric       CF0       CF1
-#> 1     AUC 0.7530103 0.7255930
-#> 2   Brier 0.1974358 0.2113294
-#> 3 OEratio 1.0030430 0.9900907
+#>    metric   CF0   CF1
+#> 1   Brier 0.197 0.211
+#> 2     auc 0.753 0.726
+#> 3 OEratio 1.003 0.990
 ```
 
 We can also assess performance measures on the observed data with the
@@ -253,7 +253,7 @@ realized treatment values:
 predictions_naive <- predict(naive_model, type = "response", newdata = df_val)
 observed_score(predictions = predictions_naive, Y = df_val$Y)
 #>    metric  observed
-#> 1     AUC 0.7467057
-#> 2   Brier 0.2034472
+#> 1   Brier 0.7467057
+#> 2     auc 0.2034472
 #> 3 OEratio 0.9976336
 ```
