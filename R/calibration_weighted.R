@@ -53,7 +53,7 @@ calibration_weighted <- function(outcomes, predictions, treatments,
   return(calibration)
 }
 
-calibration <- function(outcomes, predictions, plot = T) {
+calibration <- function(outcomes, predictions, plot = TRUE) {
   expected <- mean(predictions)
   observed <- mean(outcomes)
 

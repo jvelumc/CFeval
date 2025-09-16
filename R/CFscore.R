@@ -7,7 +7,7 @@ predict_CF <- function(model, data, A_column, CF_treatment) {
 
 
 #' @export
-CFscore_undertrt <- function(data, cf, Y, A_column_name, ipw, trt) {
+CFscore_undertrt <- function(data, cf, Y, A_column_name, ipw, trt, plot) {
   trt_ids <- data[[A_column_name]] == trt # rows of patients with trt of interest
 
   calibration <- calibration_weighted(
@@ -15,7 +15,8 @@ CFscore_undertrt <- function(data, cf, Y, A_column_name, ipw, trt) {
     predictions = cf,
     treatments = data[[A_column_name]],
     treatment_of_interest = trt,
-    weights = ipw
+    weights = ipw,
+    plot = plot
   )
 
   auc <- auc_weighted(
@@ -35,10 +36,11 @@ CFscore_undertrt <- function(data, cf, Y, A_column_name, ipw, trt) {
        "calibrationplot" = calibration$plot)
 }
 
-score_realized_trt <- function(pred, outcomes) {
+score_realized_trt <- function(pred, outcomes, plot) {
   calibration <- calibration(
     outcomes = outcomes,
-    predictions = pred
+    predictions = pred,
+    plot = plot
   )
   auc <- auc_weighted(
     outcomes = outcomes,
@@ -63,7 +65,7 @@ score_realized_trt <- function(pred, outcomes) {
 #'   model must be given.
 #' @param Y A numeric vector of observed outcomes, or a character string
 #'   indicating the name of the observed outcomes in the data.
-#'
+#' @param plot If set to TRUE, generate calibration plot
 #' @returns  A list of performance measures (Brier, Observed/Expected, AUC) of
 #'   the model on observed data
 #' @export
@@ -75,7 +77,7 @@ score_realized_trt <- function(pred, outcomes) {
 #'   data = df_dev,
 #' )
 #' observed_score(data = df_val, model = model, Y = "Y")
-observed_score <- function(data, model, predictions, Y) {
+observed_score <- function(data, model, predictions, Y, plot = TRUE) {
   stopifnot(
     "Either data and model, or predictions must be given" =
     xor(missing(predictions), ( missing(data) && missing(model) ) ),
@@ -90,7 +92,7 @@ observed_score <- function(data, model, predictions, Y) {
   if (missing(predictions)) {
     predictions <- predict(model, newdata = data, type = "response")
   }
-  results <- score_realized_trt(predictions, Y)
+  results <- score_realized_trt(predictions, Y, plot)
   class(results) <- "cfscore"
   results$treatments <- "observed"
 
@@ -148,8 +150,9 @@ make_x_as_list <- function(x, treatments) {
 #'   which the counterfactual perormance measures should be evaluated.
 #' @param bootstrap If a 95% CI around performance estimates estimated by
 #'   bootstrappingis desired, this can be achieved by setting this variable to a
-#'   integer indicating the amount of iterations. Argument propensity_formula must
-#'   then be given.
+#'   integer indicating the amount of iterations. Argument propensity_formula
+#'   must then be given.
+#' @param plot If set to TRUE, generate calibration plot
 #'
 #' @returns A list of performance measures (Brier, Observed/Expected, AUC) of
 #'   the model on counterfactual data, where each subject is assigned to the
@@ -166,7 +169,7 @@ make_x_as_list <- function(x, treatments) {
 #' CFscore(data = df_val, model = causal_model, Y = "Y",
 #'         propensity_formula = A ~ L, treatments = list(0,1))
 CFscore <- function(data, model, predictions, Y, propensity_formula,
-                    ip, A, treatments, bootstrap) {
+                    ip, A, treatments, bootstrap, plot = TRUE) {
 
   n_t <- length(treatments)
   if (!missing(model)) {
@@ -233,7 +236,7 @@ CFscore <- function(data, model, predictions, Y, propensity_formula,
   results <- lapply(
     X = 1:length(treatments),
     FUN = function(i) {
-      CFscore_undertrt(data, predictions[[i]], Y, A, ip, trt = treatments[[i]])
+      CFscore_undertrt(data, predictions[[i]], Y, A, ip, trt = treatments[[i]], plot)
     }
   )
 
