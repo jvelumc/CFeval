@@ -1,2 +1,2 @@
-- if plot = F, dont generate plot
-- then bootstrap
+assumptions
+rename to cfeval
