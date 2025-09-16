@@ -74,7 +74,7 @@ assumptions <- function(x) {
   pp(" - Conditional exchangeability requires that ", adjustment_text,
      " are sufficient to adjust for confounding and selection bias between
       treatment and outcome.")
-  pp("- Positivity")
+  pp("- Positivity (assess $weights for outliers)")
   pp("- Consistency")
   pp("- No interference")
   pp("- No measurement error")

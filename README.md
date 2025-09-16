@@ -135,7 +135,7 @@ results_causal
 #> - Conditional exchangeability requires that {L} are sufficient to
 #>  adjust for confounding and selection bias between treatment and
 #>  outcome.
-#> - Positivity
+#> - Positivity (assess $weights for outliers)
 #> - Consistency
 #> - No interference
 #> - No measurement error

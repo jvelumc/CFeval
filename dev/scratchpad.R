@@ -15,7 +15,7 @@ c <- CFscore(data = df_val,
              propensity_formula = A ~ L,
              treatments = list(0,1))
 
-c
+summary(c$weights)
 b
 
 
