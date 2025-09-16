@@ -3,6 +3,5 @@
 S3method(plot,cfscore)
 S3method(print,cfscore)
 export(CFscore)
-export(CFscore_undertrt)
 export(ip_weights)
 export(observed_score)

@@ -107,7 +107,7 @@ plot(results_naive)
 
 Bootstrapping for 95% confidence intervals (95CI) - in this setting (sample size 4000, binary outcome and treatment, 1 confounder) takes about 30 seconds on my pc. 
 ```{r}
-results_causal <- CFscore(
+CFscore(
   data = df_val,
   model = causal_model, 
   Y = "Y", 
