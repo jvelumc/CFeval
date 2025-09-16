@@ -105,6 +105,19 @@ plot(results_naive)
 
 ## Other options
 
+Bootstrapping for 95% confidence intervals (95CI) - in this setting (sample size 4000, binary outcome and treatment, 1 confounder) takes about 30 seconds on my pc. 
+```{r}
+results_causal <- CFscore(
+  data = df_val,
+  model = causal_model, 
+  Y = "Y", 
+  propensity_formula = A ~ L, 
+  treatments = list(0, 1),
+  bootstrap = 200
+)
+results_causal
+```
+
 Maybe we are only interested in counterfactual performance under level 1
 ```{r}
 CFscore(

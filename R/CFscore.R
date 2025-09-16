@@ -5,8 +5,6 @@ predict_CF <- function(model, data, A_column, CF_treatment) {
   stats::predict(model, newdata = data, type = "response")
 }
 
-
-#' @export
 CFscore_undertrt <- function(data, cf, Y, A_column_name, ipw, trt, plot) {
   trt_ids <- data[[A_column_name]] == trt # rows of patients with trt of interest
 
