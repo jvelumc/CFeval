@@ -83,6 +83,12 @@ results_causal <- CFscore(
 )
 results_causal
 ```
+Weights are exported:
+```{r}
+summary(results_causal$weights)
+```
+
+And calibration plots:
 ```{r}
 plot(results_causal)
 ```

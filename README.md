@@ -146,11 +146,21 @@ results_causal
 #> 3 OEratio 1.003 0.991
 ```
 
+Weights are exported:
+
+``` r
+summary(results_causal$weights)
+#>    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+#>   1.017   1.339   1.644   1.996   2.207  14.425
+```
+
+And calibration plots:
+
 ``` r
 plot(results_causal)
 ```
 
-<img src="man/figures/README-unnamed-chunk-5-1.png" width="100%" /><img src="man/figures/README-unnamed-chunk-5-2.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-6-1.png" width="100%" /><img src="man/figures/README-unnamed-chunk-6-2.png" width="100%" />
 
 Compare that to the counterfactual performance of the naive model:
 
@@ -174,7 +184,7 @@ results_naive
 plot(results_naive)
 ```
 
-<img src="man/figures/README-unnamed-chunk-7-1.png" width="100%" /><img src="man/figures/README-unnamed-chunk-7-2.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-8-1.png" width="100%" /><img src="man/figures/README-unnamed-chunk-8-2.png" width="100%" />
 
 ## Other options
 
