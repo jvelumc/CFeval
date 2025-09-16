@@ -94,7 +94,8 @@ results_naive <- CFscore(
   model = naive_model,
   Y = "Y",
   propensity_formula = A ~ L,
-  treatments = list(0,1)
+  treatments = list(0,1),
+  quiet = TRUE
 )
 results_naive
 ```
@@ -113,7 +114,8 @@ CFscore(
   Y = "Y", 
   propensity_formula = A ~ L, 
   treatments = list(0, 1),
-  bootstrap = 200
+  bootstrap = 200,
+  quiet = TRUE
 )
 ```
 
@@ -124,7 +126,8 @@ CFscore(
   model = causal_model, 
   Y = "Y", 
   propensity_formula = A ~ L, 
-  treatments = 1
+  treatments = 1,
+  quiet = TRUE
 )
 ```
 
@@ -139,7 +142,8 @@ CFscore(
   model = list(model0, model1),
   Y = "Y",
   propensity_formula = A ~ L,
-  treatments = list(0,1)
+  treatments = list(0,1),
+  quiet = TRUE
 )
 ```
 We can also give counterfactual predictions to CFscore, instead of models
@@ -152,7 +156,8 @@ CFscore(
   predictions = list(cf0, cf1),
   Y = "Y",
   propensity_formula = A ~ L,
-  treatments = list(0,1)
+  treatments = list(0,1),
+  quiet = TRUE
 )
 ```
 
@@ -169,7 +174,8 @@ CFscore(
   Y = "Y",
   ip = my_ip_weights,
   A = "A", #need to specify treatment var, which is normally inferred from propensity formula
-  treatments = list(0,1)
+  treatments = list(0,1),
+  quiet = TRUE
 )
 ```
 

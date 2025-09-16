@@ -15,7 +15,8 @@ CFscore(
   A,
   treatments,
   bootstrap,
-  plot = TRUE
+  plot = TRUE,
+  quiet = FALSE
 )
 }
 \arguments{
@@ -57,6 +58,8 @@ integer indicating the amount of iterations. Argument propensity_formula
 must then be given.}
 
 \item{plot}{If set to TRUE, generate calibration plot}
+
+\item{quiet}{If set to TRUE, don't print assumptions}
 }
 \value{
 A list of performance measures (Brier, Observed/Expected, AUC) of

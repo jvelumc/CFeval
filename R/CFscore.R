@@ -93,7 +93,7 @@ observed_score <- function(data, model, predictions, Y, plot = TRUE) {
   results <- score_realized_trt(predictions, Y, plot)
   class(results) <- "cfscore"
   results$treatments <- "observed"
-
+  results$quiet <- TRUE
   return(results)
 }
 
@@ -151,6 +151,7 @@ make_x_as_list <- function(x, treatments) {
 #'   integer indicating the amount of iterations. Argument propensity_formula
 #'   must then be given.
 #' @param plot If set to TRUE, generate calibration plot
+#' @param quiet If set to TRUE, don't print assumptions
 #'
 #' @returns A list of performance measures (Brier, Observed/Expected, AUC) of
 #'   the model on counterfactual data, where each subject is assigned to the
@@ -167,7 +168,7 @@ make_x_as_list <- function(x, treatments) {
 #' CFscore(data = df_val, model = causal_model, Y = "Y",
 #'         propensity_formula = A ~ L, treatments = list(0,1))
 CFscore <- function(data, model, predictions, Y, propensity_formula,
-                    ip, A, treatments, bootstrap, plot = TRUE) {
+                    ip, A, treatments, bootstrap, plot = TRUE, quiet = FALSE) {
 
   # check inputs and make consistent
   n_t <- length(treatments)
@@ -254,9 +255,13 @@ CFscore <- function(data, model, predictions, Y, propensity_formula,
     results <- append(results, b)
   }
 
-  # results$propensity <- ifelse(missing(propensity_formula), N)
-  # results$confounders <- all.vars(propensity_formula)[-1]
+  results$weights <- ip
 
+  if (!missing(propensity_formula)) {
+    results$propensity <- propensity_formula
+    results$confounders <- all.vars(propensity_formula)[-1]
+  }
+  results$quiet <- quiet
   class(results) <- "cfscore"
   results
 }

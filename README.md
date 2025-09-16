@@ -128,6 +128,18 @@ results_causal <- CFscore(
   treatments = list(0, 1)
 )
 results_causal
+#> Estimation of the performance of the prediction model in a
+#>  counterfactual (CF) dataset where everyone's treatment was set to 0 and
+#>  1.
+#> The following assumptions must be satisfied for correct inference:
+#> - Conditional exchangeability requires that {L} are sufficient to
+#>  adjust for confounding and selection bias between treatment and
+#>  outcome.
+#> - Positivity
+#> - Consistency
+#> - No interference
+#> - No measurement error
+#> - Correctly specified propensity formula
 #>    metric   CF0   CF1
 #> 1   Brier 0.197 0.212
 #> 2     auc 0.753 0.726
@@ -148,7 +160,8 @@ results_naive <- CFscore(
   model = naive_model,
   Y = "Y",
   propensity_formula = A ~ L,
-  treatments = list(0,1)
+  treatments = list(0,1),
+  quiet = TRUE
 )
 results_naive
 #>    metric   CF0   CF1
@@ -176,7 +189,8 @@ CFscore(
   Y = "Y", 
   propensity_formula = A ~ L, 
   treatments = list(0, 1),
-  bootstrap = 200
+  bootstrap = 200,
+  quiet = TRUE
 )
 #>  bootstrapping :  1 / 200                            bootstrapping :  2 / 200                            bootstrapping :  3 / 200                            bootstrapping :  4 / 200                            bootstrapping :  5 / 200                            bootstrapping :  6 / 200                            bootstrapping :  7 / 200                            bootstrapping :  8 / 200                            bootstrapping :  9 / 200                            bootstrapping :  10 / 200                            bootstrapping :  11 / 200                            bootstrapping :  12 / 200                            bootstrapping :  13 / 200                            bootstrapping :  14 / 200                            bootstrapping :  15 / 200                            bootstrapping :  16 / 200                            bootstrapping :  17 / 200                            bootstrapping :  18 / 200                            bootstrapping :  19 / 200                            bootstrapping :  20 / 200                            bootstrapping :  21 / 200                            bootstrapping :  22 / 200                            bootstrapping :  23 / 200                            bootstrapping :  24 / 200                            bootstrapping :  25 / 200                            bootstrapping :  26 / 200                            bootstrapping :  27 / 200                            bootstrapping :  28 / 200                            bootstrapping :  29 / 200                            bootstrapping :  30 / 200                            bootstrapping :  31 / 200                            bootstrapping :  32 / 200                            bootstrapping :  33 / 200                            bootstrapping :  34 / 200                            bootstrapping :  35 / 200                            bootstrapping :  36 / 200                            bootstrapping :  37 / 200                            bootstrapping :  38 / 200                            bootstrapping :  39 / 200                            bootstrapping :  40 / 200                            bootstrapping :  41 / 200                            bootstrapping :  42 / 200                            bootstrapping :  43 / 200                            bootstrapping :  44 / 200                            bootstrapping :  45 / 200                            bootstrapping :  46 / 200                            bootstrapping :  47 / 200                            bootstrapping :  48 / 200                            bootstrapping :  49 / 200                            bootstrapping :  50 / 200                            bootstrapping :  51 / 200                            bootstrapping :  52 / 200                            bootstrapping :  53 / 200                            bootstrapping :  54 / 200                            bootstrapping :  55 / 200                            bootstrapping :  56 / 200                            bootstrapping :  57 / 200                            bootstrapping :  58 / 200                            bootstrapping :  59 / 200                            bootstrapping :  60 / 200                            bootstrapping :  61 / 200                            bootstrapping :  62 / 200                            bootstrapping :  63 / 200                            bootstrapping :  64 / 200                            bootstrapping :  65 / 200                            bootstrapping :  66 / 200                            bootstrapping :  67 / 200                            bootstrapping :  68 / 200                            bootstrapping :  69 / 200                            bootstrapping :  70 / 200                            bootstrapping :  71 / 200                            bootstrapping :  72 / 200                            bootstrapping :  73 / 200                            bootstrapping :  74 / 200                            bootstrapping :  75 / 200                            bootstrapping :  76 / 200                            bootstrapping :  77 / 200                            bootstrapping :  78 / 200                            bootstrapping :  79 / 200                            bootstrapping :  80 / 200                            bootstrapping :  81 / 200                            bootstrapping :  82 / 200                            bootstrapping :  83 / 200                            bootstrapping :  84 / 200                            bootstrapping :  85 / 200                            bootstrapping :  86 / 200                            bootstrapping :  87 / 200                            bootstrapping :  88 / 200                            bootstrapping :  89 / 200                            bootstrapping :  90 / 200                            bootstrapping :  91 / 200                            bootstrapping :  92 / 200                            bootstrapping :  93 / 200                            bootstrapping :  94 / 200                            bootstrapping :  95 / 200                            bootstrapping :  96 / 200                            bootstrapping :  97 / 200                            bootstrapping :  98 / 200                            bootstrapping :  99 / 200                            bootstrapping :  100 / 200                            bootstrapping :  101 / 200                            bootstrapping :  102 / 200                            bootstrapping :  103 / 200                            bootstrapping :  104 / 200                            bootstrapping :  105 / 200                            bootstrapping :  106 / 200                            bootstrapping :  107 / 200                            bootstrapping :  108 / 200                            bootstrapping :  109 / 200                            bootstrapping :  110 / 200                            bootstrapping :  111 / 200                            bootstrapping :  112 / 200                            bootstrapping :  113 / 200                            bootstrapping :  114 / 200                            bootstrapping :  115 / 200                            bootstrapping :  116 / 200                            bootstrapping :  117 / 200                            bootstrapping :  118 / 200                            bootstrapping :  119 / 200                            bootstrapping :  120 / 200                            bootstrapping :  121 / 200                            bootstrapping :  122 / 200                            bootstrapping :  123 / 200                            bootstrapping :  124 / 200                            bootstrapping :  125 / 200                            bootstrapping :  126 / 200                            bootstrapping :  127 / 200                            bootstrapping :  128 / 200                            bootstrapping :  129 / 200                            bootstrapping :  130 / 200                            bootstrapping :  131 / 200                            bootstrapping :  132 / 200                            bootstrapping :  133 / 200                            bootstrapping :  134 / 200                            bootstrapping :  135 / 200                            bootstrapping :  136 / 200                            bootstrapping :  137 / 200                            bootstrapping :  138 / 200                            bootstrapping :  139 / 200                            bootstrapping :  140 / 200                            bootstrapping :  141 / 200                            bootstrapping :  142 / 200                            bootstrapping :  143 / 200                            bootstrapping :  144 / 200                            bootstrapping :  145 / 200                            bootstrapping :  146 / 200                            bootstrapping :  147 / 200                            bootstrapping :  148 / 200                            bootstrapping :  149 / 200                            bootstrapping :  150 / 200                            bootstrapping :  151 / 200                            bootstrapping :  152 / 200                            bootstrapping :  153 / 200                            bootstrapping :  154 / 200                            bootstrapping :  155 / 200                            bootstrapping :  156 / 200                            bootstrapping :  157 / 200                            bootstrapping :  158 / 200                            bootstrapping :  159 / 200                            bootstrapping :  160 / 200                            bootstrapping :  161 / 200                            bootstrapping :  162 / 200                            bootstrapping :  163 / 200                            bootstrapping :  164 / 200                            bootstrapping :  165 / 200                            bootstrapping :  166 / 200                            bootstrapping :  167 / 200                            bootstrapping :  168 / 200                            bootstrapping :  169 / 200                            bootstrapping :  170 / 200                            bootstrapping :  171 / 200                            bootstrapping :  172 / 200                            bootstrapping :  173 / 200                            bootstrapping :  174 / 200                            bootstrapping :  175 / 200                            bootstrapping :  176 / 200                            bootstrapping :  177 / 200                            bootstrapping :  178 / 200                            bootstrapping :  179 / 200                            bootstrapping :  180 / 200                            bootstrapping :  181 / 200                            bootstrapping :  182 / 200                            bootstrapping :  183 / 200                            bootstrapping :  184 / 200                            bootstrapping :  185 / 200                            bootstrapping :  186 / 200                            bootstrapping :  187 / 200                            bootstrapping :  188 / 200                            bootstrapping :  189 / 200                            bootstrapping :  190 / 200                            bootstrapping :  191 / 200                            bootstrapping :  192 / 200                            bootstrapping :  193 / 200                            bootstrapping :  194 / 200                            bootstrapping :  195 / 200                            bootstrapping :  196 / 200                            bootstrapping :  197 / 200                            bootstrapping :  198 / 200                            bootstrapping :  199 / 200                            bootstrapping :  200 / 200                           
 #>    metric   CF0      CF0.95CI   CF1      CF1.95CI
@@ -193,7 +207,8 @@ CFscore(
   model = causal_model, 
   Y = "Y", 
   propensity_formula = A ~ L, 
-  treatments = 1
+  treatments = 1,
+  quiet = TRUE
 )
 #>    metric   CF1
 #> 1   Brier 0.212
@@ -215,7 +230,8 @@ CFscore(
   model = list(model0, model1),
   Y = "Y",
   propensity_formula = A ~ L,
-  treatments = list(0,1)
+  treatments = list(0,1),
+  quiet = TRUE
 )
 #>    metric   CF0   CF1
 #> 1   Brier 0.197 0.211
@@ -235,7 +251,8 @@ CFscore(
   predictions = list(cf0, cf1),
   Y = "Y",
   propensity_formula = A ~ L,
-  treatments = list(0,1)
+  treatments = list(0,1),
+  quiet = TRUE
 )
 #>    metric   CF0   CF1
 #> 1   Brier 0.197 0.211
@@ -258,7 +275,8 @@ CFscore(
   Y = "Y",
   ip = my_ip_weights,
   A = "A", #need to specify treatment var, which is normally inferred from propensity formula
-  treatments = list(0,1)
+  treatments = list(0,1),
+  quiet = TRUE
 )
 #>    metric   CF0   CF1
 #> 1   Brier 0.197 0.211

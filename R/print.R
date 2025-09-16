@@ -9,9 +9,10 @@ formatci <- function(ci) {
 }
 
 #' @export
-print.cfscore <- function(x, trt = NULL, quiet = TRUE) {
-  if (!quiet) {
-    assumptions(x$treatments, x$confounding_set)
+print.cfscore <- function(x, trt = NULL) {
+  if (!x$quiet) {
+    assumptions(x)
+    # assumptions(x$treatments, x$confounding_set)
   }
   if (is.null(trt)) {
     trt <- x$treatments
@@ -50,7 +51,8 @@ plot.cfscore <- function(x, trt = NULL) {
   }
 }
 
-assumptions <- function(t, confounders) {
+assumptions <- function(x) {
+  t <- x$treatments
   n_t <- length(t)
   if (n_t >= 2) {
     t_formatted <- paste0(
@@ -59,14 +61,18 @@ assumptions <- function(t, confounders) {
   } else {
     t_formatted <- t[[1]]
   }
-
-  confounders_formatted <- paste0(confounders, collapse = ", ")
   pp("Estimation of the performance of the prediction model in a counterfactual
      (CF) dataset where everyone's treatment was set to ",
      t_formatted, ".")
   pp("The following assumptions must be satisfied for correct inference:")
-  pp(" - Conditional exchangeability requires that {, ", confounders_formatted,
-     "} is sufficient to adjust for confounding and selection bias between
+
+  if ("confounders" %in% names(x)) {
+    adjustment_text <- paste0("{", paste0(x$confounders, collapse = ", "), "}")
+  } else {
+    adjustment_text <- "given IP-weights"
+  }
+  pp(" - Conditional exchangeability requires that ", adjustment_text,
+     " are sufficient to adjust for confounding and selection bias between
       treatment and outcome.")
   pp("- Positivity")
   pp("- Consistency")
