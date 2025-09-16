@@ -112,7 +112,7 @@ plot(results_naive)
 
 ## Other options
 
-Bootstrapping for 95% confidence intervals (95CI) - in this setting (sample size 4000, binary outcome and treatment, 1 confounder) takes about 30 seconds on my pc. 
+Bootstrapping for 95% confidence intervals (95CI) - in this setting (sample size 4000, binary outcome and treatment, 1 confounder) takes about 30 seconds on my pc with 200 bootstrap iterations. Here we use 50 bootstraps to save time. 
 ```{r}
 CFscore(
   data = df_val,
@@ -120,7 +120,7 @@ CFscore(
   Y = "Y", 
   propensity_formula = A ~ L, 
   treatments = list(0, 1),
-  bootstrap = 200,
+  bootstrap = 50,
   quiet = TRUE
 )
 ```
