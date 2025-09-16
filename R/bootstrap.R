@@ -51,7 +51,7 @@ extract_var <- function(bootstrap_results, trt, variable) {
 ci <- function(values, cover = 0.95) {
   lower <- (1-cover) / 2
   upper <- 1 - lower
-  quantile(values, probs = c(lower, upper))
+  stats::quantile(values, probs = c(lower, upper))
 }
 
 run_bootstrap <- function(data, propensity_formula, predictions,

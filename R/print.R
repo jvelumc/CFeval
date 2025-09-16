@@ -9,14 +9,14 @@ formatci <- function(ci) {
 }
 
 #' @export
-print.cfscore <- function(x, trt = NULL) {
+print.cfscore <- function(x, ...) {
   if (!x$quiet) {
     assumptions(x)
     # assumptions(x$treatments, x$confounding_set)
   }
-  if (is.null(trt)) {
-    trt <- x$treatments
-  }
+
+  trt <- x$treatments
+
   results <- data.frame("metric" = c("Brier", "auc", "OEratio"))
   for (t in trt) {
     if (t != "observed") {
@@ -37,9 +37,13 @@ print.cfscore <- function(x, trt = NULL) {
 }
 
 #' @export
-plot.cfscore <- function(x, trt = NULL) {
-  if (is.null(trt)) {
+plot.cfscore <- function(x, ...) {
+  arg <- list(...)
+  if (!("trt" %in% names(arg))) {
     trt <- x$treatments
+  }
+  else {
+    trt <- arg$trt
   }
   for (t in trt) {
     if (t != "observed") {

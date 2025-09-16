@@ -88,7 +88,7 @@ observed_score <- function(data, model, predictions, Y, plot = TRUE) {
   }
 
   if (missing(predictions)) {
-    predictions <- predict(model, newdata = data, type = "response")
+    predictions <- stats::predict(model, newdata = data, type = "response")
   }
   results <- score_realized_trt(predictions, Y, plot)
   class(results) <- "cfscore"
