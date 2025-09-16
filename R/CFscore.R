@@ -171,6 +171,7 @@ make_x_as_list <- function(x, treatments) {
 CFscore <- function(data, model, predictions, Y, propensity_formula,
                     ip, A, treatments, bootstrap, plot = TRUE) {
 
+  # check inputs and make consistent
   n_t <- length(treatments)
   if (!missing(model)) {
     n_models <- ifelse("list" %in% class(model), length(model), 1)
@@ -233,52 +234,28 @@ CFscore <- function(data, model, predictions, Y, propensity_formula,
     ip <- ip_weights(data, propensity_formula)
   }
 
+
+  # peform actual analysis
   results <- lapply(
     X = 1:length(treatments),
     FUN = function(i) {
       CFscore_undertrt(data, predictions[[i]], Y, A, ip, trt = treatments[[i]], plot)
     }
   )
-
-  # bootstrap
-  if (!missing(bootstrap)) {
-    print(bootstrap)
-    bootstrap_iteration <- function() {
-      bs_sample <- sample(nrow(data), size = nrow(data), replace = T)
-      bs_ip <- ip_weights(data[bs_sample, ], propensity_formula)
-      bs_results <- lapply(
-        X = 1:length(treatments),
-        FUN = function(i) {
-          CFscore_undertrt(
-            data = data[bs_sample, ],
-            cf = predictions[[i]][bs_sample],
-            Y = Y[bs_sample],
-            A_column_name = A,
-            ipw = bs_ip,
-            trt = treatments[[i]]
-          )
-        }
-      )
-      names(bs_results) <- lapply(
-        X = treatments,
-        FUN = function(x) paste0("CF", x)
-      )
-      bs_results
-    }
-
-
-    b <- lapply(as.list(1:bootstrap), function(x) bootstrap_iteration())
-    return(b)
-
-  }
-
   names(results) <- lapply(
     X = treatments,
     FUN = function(x) paste0("CF", x)
   )
 
-
   results$treatments <- treatments
+
+  # bootstrap
+  if (!missing(bootstrap)) {
+    b <- run_bootstrap(data, propensity_formula, predictions,
+                       Y, A, treatments, bootstrap)
+    results <- append(results, b)
+  }
+
   # results$propensity <- ifelse(missing(propensity_formula), N)
   # results$confounders <- all.vars(propensity_formula)[-1]
 

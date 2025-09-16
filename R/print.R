@@ -4,6 +4,10 @@ pp <- function(...) {
   cat(paste0(strwrap(txt), "\n"))
 }
 
+formatci <- function(ci) {
+  paste0(format(ci, digits = 3), collapse = " - ")
+}
+
 #' @export
 print.cfscore <- function(x, trt = NULL, quiet = TRUE) {
   if (!quiet) {
@@ -12,11 +16,17 @@ print.cfscore <- function(x, trt = NULL, quiet = TRUE) {
   if (is.null(trt)) {
     trt <- x$treatments
   }
-  results <- data.frame("metric" = c("AUC", "Brier", "OEratio"))
+  results <- data.frame("metric" = c("Brier", "auc", "OEratio"))
   for (t in trt) {
     if (t != "observed") {
       col <- paste0("CF", t)
-      results[[col]] <- c(x[[col]]$auc, x[[col]]$brier, x[[col]]$OEratio)
+      results[[col]] <- format(unlist(x[[col]][1:3]), digits = 3)
+
+      if ("bootstrap" %in% names(x)) {
+        results[[paste0(col, ".95CI")]] <-
+          sapply(x[["bootstrap"]][[col]], formatci)
+      }
+
     } else {
       col <- "observed"
       results[[col]] <- c(x$auc, x$brier, x$OEratio)
