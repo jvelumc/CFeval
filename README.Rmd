@@ -24,7 +24,7 @@ counterfactual performance of interventional predictions.
 You can install the development version of CFeval from [GitHub](https://github.com/) with:
 ``` r
 # install.packages("devtools")
-devtools::github("jvelumc/CFeval")
+devtools::install_github("jvelumc/CFeval")
 ```
 ## Toy example
 

@@ -18,7 +18,7 @@ You can install the development version of CFeval from
 
 ``` r
 # install.packages("devtools")
-devtools::github("jvelumc/CFeval")
+devtools::install_github("jvelumc/CFeval")
 ```
 
 ## Toy example
