@@ -183,11 +183,6 @@ CFscore(
 #> 1   Brier 0.197 0.194 - 0.203 0.212 0.208 - 0.214
 #> 2     auc 0.753 0.736 - 0.768 0.726 0.718 - 0.735
 #> 3 OEratio 1.003 0.977 - 1.022 0.991 0.988 - 1.014
-results_causal
-#>    metric   CF0   CF1
-#> 1   Brier 0.197 0.212
-#> 2     auc 0.753 0.726
-#> 3 OEratio 1.003 0.991
 ```
 
 Maybe we are only interested in counterfactual performance under level 1

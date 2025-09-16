@@ -115,7 +115,6 @@ CFscore(
   treatments = list(0, 1),
   bootstrap = 200
 )
-results_causal
 ```
 
 Maybe we are only interested in counterfactual performance under level 1
