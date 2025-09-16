@@ -24,6 +24,20 @@ bootstrap_iteration <- function(data, propensity_formula, predictions,
   bs_results
 }
 
+lapply_progress <- function(x, FUN, task_description) {
+
+  FUN2 <- function(x, i, n) {
+    result <- FUN(x)
+    cat("\r", task_description, ": ", i, "/", n, "                          ")
+    return(result)
+  }
+
+  n <- length(x)
+  result <- lapply(as.list(1:n), function(i) FUN2(x[[i]], i, n))
+  cat("\r")
+  return(result)
+}
+
 extract_var <- function(bootstrap_results, trt, variable) {
   CFtrt <- paste0("CF", trt)
   sapply(
@@ -42,12 +56,13 @@ ci <- function(values, cover = 0.95) {
 
 run_bootstrap <- function(data, propensity_formula, predictions,
                           Y, A, treatments, iterations) {
-  b <- lapply(
+  b <- lapply_progress(
     as.list(1:iterations),
     function(x) {
       bootstrap_iteration(data, propensity_formula, predictions, Y, A,
                           treatments)
-    }
+    },
+    "bootstrapping"
   )
 
   # overly complicated unnesting of results
