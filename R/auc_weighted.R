@@ -1,4 +1,9 @@
 auc_weighted <- function(outcomes, predictions, weights) {
+  stopifnot(
+    "no controls in outcomes" = 0 %in% outcomes,
+    "no cases in outcomes" = 1 %in% outcomes,
+    "nonbinary outcome" = length(unique(outcomes)) == 2
+  )
 
   cases_indices <- which(outcomes == 1)
   controls_indices <- which(outcomes == 0)
