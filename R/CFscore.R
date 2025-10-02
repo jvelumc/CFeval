@@ -121,17 +121,84 @@ make_x_as_list <- function(x, treatments) {
 
 
 
-CFscore <- function(validation_data, model, predictions, propensity_formula,
-                    outcome_column, treatment_column, treatment_of_interest,
-                    null.model = TRUE, bootstrap = FALSE, plot = TRUE,
+CFscore <- function(validation_data, model, predictions, outcome_column,
+                    propensity_formula,
+                    treatment_column, treatment_of_interest,
+                    metrics = c("auc", "brier", "oe", "oeplot"),
+                    null.model = TRUE, bootstrap = FALSE,
                     quiet = FALSE) {
-  # input checking
+  # Check whether model/prediction input is correct
 
   if (!missing(model)) { # glm's dont have list class. Do other model objects?
+
     n_models <- ifelse("list" %in% class(model), length(model), 1)
+
+    if (n_models == 0) {
+      stop("Empty list of models specified")
+    }
   }
 
-  #
+  if (!missing(predictions)) {
+    if (is.numeric(predictions)) {
+      n_models <- 1
+    } else if (is.list(predictions)) {
+      if (length(predictions) == 0) {
+        stop("Empty prediction list specified")
+      }
+
+      if (!is.numeric(predictions[[1]])) {
+        stop("predictions is not numeric or list of numeric vectors")
+      }
+
+      n_models <- length(predictions)
+    } else {
+      stop("predictions is not numeric or list of numeric vectors")
+    }
+  }
+
+  if (!xor(missing(model), missing(predictions))) {
+    stop("Either model or predictions must be specified, and not both")
+  }
+
+  # check whether outcome is correctly specified
+
+  if (is.character(outcome_column)) {
+    if (!(outcome_column %in% names(validation_data)))
+      stop("outcome_column is not a column of validation_data")
+    Y <- validation_data[[outcome_column]]
+  } else if (is.numeric(outcome_column)) {
+    if (length(outcome_column) != nrow(validation_data))
+      stop("Length of outcome_column is unequal to nrows of validation_data")
+
+    Y <- outcome_column
+  } else
+    stop("outcome_column is not character or numeric vector")
+
+  # treatments, propensity formula
+
+  if (!missing(propensity_formula)) {
+    if (!missing(treatment_column)) {
+      A <- all.vars(propensity_formula)[1]
+      if (A != treatment_column) {
+        stop("treatment_column must be l.h.s. of propensity formula (and is
+             optional if propensity formula is given")
+      }
+    }
+  }
+
+  A <- treatment_column
+
+  if (!(A %in% names(validation_data))) {
+    stop("treatment_column is not a column of validation_data")
+  }
+
+
+  CF_data <-
+    if (null.model) {
+      # fit null model on counterfactual validation data
+      # nullmodel <- glm()
+    }
+
 
   cfscore <- list()
   cfscore$n_models <- n_models
