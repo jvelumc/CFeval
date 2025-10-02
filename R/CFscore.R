@@ -132,6 +132,11 @@ CFscore <- function(validation_data, model, predictions, propensity_formula,
   }
 
   #
+
+  cfscore <- list()
+  cfscore$n_models <- n_models
+
+  return(cfscore)
 }
 
 
