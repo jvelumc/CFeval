@@ -6,61 +6,71 @@ test_that("n models assessed correctly", {
     df_val,
     model = mod,
     outcome_column = "Y",
-    treatment_column = "A"
+    treatment_column = "A",
+    treatment_of_interest = 0
   )$n_models, 1)
 
   expect_equal(CFscore(df_val,
     model = list(mod),
     outcome_column = "Y",
-    treatment_column = "A"
+    treatment_column = "A",
+    treatment_of_interest = 0
   )$n_models, 1)
 
   expect_equal(CFscore(df_val,
     model = list(mod, mod),
     outcome_column = "Y",
-    treatment_column = "A"
+    treatment_column = "A",
+    treatment_of_interest = 0
   )$n_models, 2)
 
   expect_error(CFscore(df_val,
     model = list(),
     outcome_column = "Y",
-    treatment_column = "A"
+    treatment_column = "A",
+    treatment_of_interest = 0
   ), "Empty list of models")
 
   expect_equal(CFscore(df_val,
     predictions = pred,
     outcome_column = "Y",
-    treatment_column = "A"
+    treatment_column = "A",
+    treatment_of_interest = 0
   )$n_models, 1)
 
   expect_equal(CFscore(df_val,
     predictions = list(pred),
     outcome_column = "Y",
-    treatment_column = "A"
+    treatment_column = "A",
+    treatment_of_interest = 0
   )$n_models, 1)
 
   expect_equal(CFscore(df_val,
     predictions = list(pred, pred),
     outcome_column = "Y",
-    treatment_column = "A"
+    treatment_column = "A",
+    treatment_of_interest = 0
   )$n_models, 2)
 
   expect_error(CFscore(df_val,
     predictions = list(),
     outcome_column = "Y",
-    treatment_column = "A"
+    treatment_column = "A",
+    treatment_of_interest = 0
   ), "Empty prediction list")
 
   expect_error(CFscore(df_val,
     outcome_column = "Y",
-    treatment_column = "A"
+    treatment_column = "A",
+    treatment_of_interest = 0
   ), "Either model or predictions")
 
   expect_error(
     CFscore(df_val,
       model = mod, predictions = pred,
       outcome_column = "Y",
-      treatment_column = "A"
+      treatment_column = "A",
+      treatment_of_interest = 0
     ),
     "Either model or predictions"
   )
@@ -102,5 +112,37 @@ test_that("treatment/propensity/outcome input checks", {
     )
   )
 
+  expect_no_error(
+    CFscore(df_val,
+            model = mod,
+            outcome_column = df_val$Y,
+            propensity_formula = A ~ P
+    )
+  )
 
+  expect_no_error(
+    CFscore(df_val,
+            model = mod,
+            outcome_column = df_val$Y,
+            treatment_column = "A",
+            propensity_formula = A ~ P
+    )
+  )
+
+  expect_error(
+    CFscore(df_val,
+            model = mod,
+            outcome_column = "Y",
+            treatment_column = "P",
+            propensity_formula = A ~ P
+    ), "l.h.s."
+  )
+
+  expect_error(
+    CFscore(df_val,
+            model = mod,
+            outcome_column = "Y",
+            propensity_formula = "A ~ P"
+    ), "formula object"
+  )
 })
