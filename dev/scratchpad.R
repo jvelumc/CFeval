@@ -19,3 +19,13 @@ cfs <- CFscore(df_val, list("naive" = naive_model, "causal" = causal_model),
 CFscore(df_val, list("naive" = naive_model, "causal" = causal_model),
         outcome_column = "Y", propensity_formula = A ~ L,
         treatment_of_interest = 1)
+
+
+
+unlist(cfs$results[[1]]) |> str()
+
+
+split(
+  unlist(cfs$results, use.names = T),
+  f = c("brier", "auc", "oe", "oeplot")
+) |> str()

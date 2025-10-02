@@ -127,6 +127,8 @@ CFscore <- function(validation_data, model, predictions, outcome_column,
     }
   )
 
+  #
+
   cfscore$n_models <- n_models
 
   return(cfscore)
