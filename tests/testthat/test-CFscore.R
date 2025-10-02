@@ -6,73 +6,73 @@ test_that("n models assessed correctly", {
     df_val,
     model = mod,
     outcome_column = "Y",
-    treatment_column = "A",
+    propensity_formula = A ~ L,
     treatment_of_interest = 0
   )$n_models, 1)
 
   expect_equal(CFscore(df_val,
     model = list(mod),
     outcome_column = "Y",
-    treatment_column = "A",
+    propensity_formula = A ~ L,
     treatment_of_interest = 0
   )$n_models, 1)
 
   expect_equal(CFscore(df_val,
     model = list(mod, mod),
     outcome_column = "Y",
-    treatment_column = "A",
+    propensity_formula = A ~ L,
     treatment_of_interest = 0
   )$n_models, 2)
 
   expect_error(CFscore(df_val,
     model = list(),
     outcome_column = "Y",
-    treatment_column = "A",
+    propensity_formula = A ~ L,
     treatment_of_interest = 0
   ), "Empty list of models")
 
   expect_equal(CFscore(df_val,
     predictions = pred,
     outcome_column = "Y",
-    treatment_column = "A",
+    propensity_formula = A ~ L,
     treatment_of_interest = 0
   )$n_models, 1)
 
   expect_equal(CFscore(df_val,
     predictions = list(pred),
     outcome_column = "Y",
-    treatment_column = "A",
+    propensity_formula = A ~ L,
     treatment_of_interest = 0
   )$n_models, 1)
 
   expect_equal(CFscore(df_val,
     predictions = list(pred, pred),
     outcome_column = "Y",
-    treatment_column = "A",
+    propensity_formula = A ~ L,
     treatment_of_interest = 0
   )$n_models, 2)
 
   expect_error(CFscore(df_val,
     predictions = list(),
     outcome_column = "Y",
-    treatment_column = "A",
+    propensity_formula = A ~ L,
     treatment_of_interest = 0
   ), "Empty prediction list")
 
   expect_error(CFscore(df_val,
     outcome_column = "Y",
-    treatment_column = "A",
+    propensity_formula = A ~ L,
     treatment_of_interest = 0
-  ), "Either model or predictions")
+  ), "One of")
 
   expect_error(
     CFscore(df_val,
       model = mod, predictions = pred,
       outcome_column = "Y",
-      treatment_column = "A",
+      propensity_formula = A ~ L,
       treatment_of_interest = 0
     ),
-    "Either model or predictions"
+    "One of"
   )
 })
 
@@ -84,7 +84,9 @@ test_that("treatment/propensity/outcome input checks", {
     CFscore(df_val,
             model = mod,
             outcome_column = "Y",
-            treatment_column = "Q"
+            treatment_column = "Q",
+            ip = df_val$id,
+            treatment_of_interest = 0
     ), "treatment_column is not"
   )
 
@@ -92,7 +94,9 @@ test_that("treatment/propensity/outcome input checks", {
     CFscore(df_val,
             model = mod,
             outcome_column = "Q",
-            treatment_column = "A"
+            treatment_column = "A",
+            ip = df_val$id,
+            treatment_of_interest = 0
     ), "outcome_column is not"
   )
 
@@ -100,7 +104,9 @@ test_that("treatment/propensity/outcome input checks", {
     CFscore(df_val,
             model = mod,
             outcome_column = c(1,2,3),
-            treatment_column = "A"
+            treatment_column = "A",
+            ip = df_val$id,
+            treatment_of_interest = 0
     ), "Length of outcome_column"
   )
 
@@ -108,7 +114,9 @@ test_that("treatment/propensity/outcome input checks", {
     CFscore(df_val,
             model = mod,
             outcome_column = df_val$Y,
-            treatment_column = "A"
+            treatment_column = "A",
+            ip = df_val$id,
+            treatment_of_interest = 0
     )
   )
 
@@ -116,7 +124,9 @@ test_that("treatment/propensity/outcome input checks", {
     CFscore(df_val,
             model = mod,
             outcome_column = df_val$Y,
-            propensity_formula = A ~ P
+            propensity_formula = A ~ P,
+            ip = df_val$id,
+            treatment_of_interest = 0
     )
   )
 
@@ -125,7 +135,9 @@ test_that("treatment/propensity/outcome input checks", {
             model = mod,
             outcome_column = df_val$Y,
             treatment_column = "A",
-            propensity_formula = A ~ P
+            propensity_formula = A ~ P,
+            ip = df_val$id,
+            treatment_of_interest = 0
     )
   )
 
@@ -134,7 +146,9 @@ test_that("treatment/propensity/outcome input checks", {
             model = mod,
             outcome_column = "Y",
             treatment_column = "P",
-            propensity_formula = A ~ P
+            propensity_formula = A ~ P,
+            ip = df_val$id,
+            treatment_of_interest = 0
     ), "l.h.s."
   )
 
@@ -142,7 +156,9 @@ test_that("treatment/propensity/outcome input checks", {
     CFscore(df_val,
             model = mod,
             outcome_column = "Y",
-            propensity_formula = "A ~ P"
+            propensity_formula = "A ~ P",,
+            ip = df_val$id,
+            treatment_of_interest = 0
     ), "formula object"
   )
 })

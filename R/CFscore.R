@@ -123,6 +123,13 @@ make_x_as_list <- function(x, treatments) {
   }
 }
 
+make_list_if_not_list <- function(x) {
+  if ("list" %in% class(x))
+    return(x)
+  else
+    return(list(x))
+}
+
 
 CFscore <- function(validation_data, model, predictions, outcome_column,
                     propensity_formula, ipweights,
@@ -135,136 +142,79 @@ CFscore <- function(validation_data, model, predictions, outcome_column,
   check_missing_xor(model, predictions)
   check_missing(outcome_column)
   check_missing_xor(propensity_formula, ipweights)
+  check_missing_xor(propensity_formula, treatment_column)
   check_missing(treatment_of_interest)
 
+  # extract treatment_column & ipweights from propensity formula if given
+  if (missing(treatment_column))
+    treatment_column <- all.vars(propensity_formula)[1]
+  if (!missing(propensity_formula))
+    ipweights <- ip_weights(validation_data, propensity_formula)
 
-  check_missing(treatment_of_interest)
+  # extract predictions from models
+  if (!missing(model)) {
+    model <- make_list_if_not_list(model)
+    predictions <- lapply(model, function(mod) predict_CF(
+      model = mod,
+      data = validation_data,
+      A_column = treatment_column,
+      CF_treatment = treatment_of_interest
+    ))
+
+  }
+  predictions <- make_list_if_not_list(predictions)
+  n_models <- length(predictions)
+
+  # get outcome vector
+  if (is.character(outcome_column) == TRUE)
+    outcome_column <- validation_data[[outcome_column]]
+
+  correct_trt_id <- validation_data[[treatment_column]] == treatment_of_interest
+
+  # fit a null model
+  if (null.model == TRUE) {
+
+    null_model <- lm(
+      outcome_column[correct_trt_id] ~ 1,
+      weights = ipweights[correct_trt_id]
+    )
+
+    null_preds <- predict(null_model,
+                          newdata = validation_data,
+                          type = "response")
+
+    predictions <- c(list("null.model" = null_preds), predictions)
+  }
+
+  cfscore <- list()
 
 
 
-#   if (missing(validation_data))
-#     stop("validation_data is missing")
-#   if (missing(model))
-#     stop("model is missing")
-#
-#   if (!xor(missing(model), missing(predictions)))
-#     stop("Either model or predictions must be given")
-#   if (!xor(missing(propensity_formula), missing(ipweights)))
-#     stop("Either propensity formula or ipweights must be given")
-#
-#
-#
-#   # Check whether model/prediction input is correct
-#   if (!missing(model)) { # glm's dont have list class. Do other model objects?
-#     if ("list" %in% class(model)) {
-#       n_models <- length(model)
-#     } else {
-#       n_models <- 1
-#       model <- list(model)
-#     }
-#
-#     if (n_models == 0) {
-#       stop("Empty list of models specified")
-#     }
-#   }
-#
-#
-#
-#
-#
-#
-#   if (!missing(predictions)) {
-#     if (is.numeric(predictions)) {
-#       n_models <- 1
-#     } else if (is.list(predictions)) {
-#       if (length(predictions) == 0) {
-#         stop("Empty prediction list specified")
-#       }
-#
-#       if (!is.numeric(predictions[[1]])) {
-#         stop("predictions is not numeric or list of numeric vectors")
-#       }
-#
-#       n_models <- length(predictions)
-#     } else {
-#       stop("predictions is not numeric or list of numeric vectors")
-#     }
-#   }
-#
-#   if (!xor(missing(model), missing(predictions)))
-#     stop("Either model or predictions must be specified, and not both")
-#
-#   # check whether outcome is correctly specified
-#
-#   if (is.character(outcome_column)) {
-#     if (!(outcome_column %in% names(validation_data))) {
-#       stop("outcome_column is not a column of validation_data")
-#     }
-#     Y <- validation_data[[outcome_column]]
-#   } else if (is.numeric(outcome_column)) {
-#     if (length(outcome_column) != nrow(validation_data)) {
-#       stop("Length of outcome_column is unequal to nrows of validation_data")
-#     }
-#
-#     Y <- outcome_column
-#   } else {
-#     stop("outcome_column is not character or numeric vector")
-#   }
-#
-#   # treatments, propensity formula, weights
-#
-#   if (!missing(ipweights) && length(ipweights) != nrow(validation_data))
-#     stop("ipweights should have same length as rows in validation_data")
-#
-#   if (!missing(propensity_formula)) {
-#     if (!is.formula(propensity_formula)) {
-#       stop("propensity_formula is not a formula object")
-#     }
-#
-#     if (!missing(ipweights))
-#       stop("Either propensity_formula or ipweights should be given")
-#
-#     ipweights <- ip_weights(validation_data, propensity_formula)
-#
-#     A <- all.vars(propensity_formula)[1]
-#
-#     if (!missing(treatment_column)) {
-#       if (A != treatment_column) {
-#         stop("treatment_column must be l.h.s. of propensity formula (and is
-#              optional if propensity formula is given")
-#       }
-#     }
-#   } else {
-#     if (missing(treatment_column)) {
-#       stop("propensity_formula or treatment_column must be specified")
-#     }
-#     A <- treatment_column
-#   }
-#
-#   if (!(A %in% names(validation_data))) {
-#     stop("treatment_column is not a column of validation_data")
-#   }
-#
-#
-#
-#   if (null.model) {
-#
-#     null_model <- glm(
-#       Y[A == treatment_of_interest] ~ 1,
-#       family = "binomial",
-#       weights = ipweights[A == treatment_of_interest])
-#
-#   }
-#
-#
-#   lapply()
-#   predictions <- predict_CF()
-#
-#
-#   cfscore <- list()
-#   cfscore$n_models <- n_models
 
-  return(0)
+#   if ("auc" %in% metrics)
+#     cfscore$auc <- lapply(
+#       X = predictions,
+#       FUN = auc_weighted,
+#       outcomes = outcome_column,
+#       weights = ipweights
+#     )
+#
+#   if ("brier" %in% metrics)
+#     cfscore$brier <- lapply(
+#       X = predictions,
+#       FUN = brier_weighted,
+#       outcomes = outcome_column,
+#       weights = ipweights
+#     )
+#
+#   if ("oe" %in% metrics | "oeplot" %in% metrics) {
+#     calibration_weighted()
+#   }
+
+
+  cfscore$n_models <- n_models
+
+  return(cfscore)
 }
 
 

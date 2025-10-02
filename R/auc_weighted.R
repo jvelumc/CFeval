@@ -1,4 +1,4 @@
-auc_weighted <- function(outcomes, predictions, weights) {
+auc_weighted <- function(predictions, outcomes, weights) {
   stopifnot(
     "no controls in outcomes" = 0 %in% outcomes,
     "no cases in outcomes" = 1 %in% outcomes,
