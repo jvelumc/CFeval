@@ -98,8 +98,8 @@ observed_score <- function(data, model, predictions, Y, plot = TRUE) {
 }
 
 
-# input: single element or list of length 1 or length(treatments)
-# output: a list of length treatments, where each element is input, possibly repeated
+# input: single element or list of length 1 or length(treatments) output: a list
+# of length treatments, where each element is input, possibly repeated
 make_x_as_list <- function(x, treatments) {
   n_t <- length(treatments)
   n_x <- ifelse("list" %in% class(x), length(x), 1) # do we have a list of x or just 1?
@@ -118,6 +118,22 @@ make_x_as_list <- function(x, treatments) {
     return(replicate(n_t, x, simplify = FALSE))
   }
 }
+
+
+
+CFscore <- function(validation_data, model, predictions, propensity_formula,
+                    outcome_column, treatment_column, treatment_of_interest,
+                    null.model = TRUE, bootstrap = FALSE, plot = TRUE,
+                    quiet = FALSE) {
+  # input checking
+
+  if (!missing(model)) { # glm's dont have list class. Do other model objects?
+    n_models <- ifelse("list" %in% class(model), length(model), 1)
+  }
+
+  #
+}
+
 
 #' Assess counterfactual performance of a model capable of predictions under
 #' interventions
@@ -167,105 +183,109 @@ make_x_as_list <- function(x, treatments) {
 #' )
 #' CFscore(data = df_val, model = causal_model, Y = "Y",
 #'         propensity_formula = A ~ L, treatments = list(0,1))
-CFscore <- function(data, model, predictions, Y, propensity_formula,
-                    ip, A, treatments, bootstrap, plot = TRUE, quiet = FALSE) {
-
-  # check inputs and make consistent
-  n_t <- length(treatments)
-  if (!missing(model)) {
-    n_models <- ifelse("list" %in% class(model), length(model), 1)
-  }
-  if (!missing(predictions)) {
-    if (is.numeric(predictions)) {
-      n_models <- 1
-    } else if (is.list(predictions)) {
-      stopifnot("Predictions should either be a numeric vector or a list of
-                numeric vectors" = is.numeric(predictions[[1]]))
-      n_models <- length(predictions)
-    } else {
-      stop("Predictions should either be a numeric vector or a list of
-           numeric vectors.")
-    }
-  }
-
-  if (is.character(Y)) {
-    Y <- data[[Y]]
-  }
-
-  stopifnot(
-    "Either model or predictions must be specified, and not both" =
-      xor(missing(model), missing(predictions)),
-    "There should be 1 model or a model for each treatment value" =
-      missing(model) || n_models %in% c(1, n_t),
-    "There should be 1 prediction vector or a list of prediction vectors for each treatment value" =
-      missing(predictions) || n_models %in% c(1, n_t),
-    "Either propensity formula or ip must be specified, and not both" =
-      xor(missing(propensity_formula), missing(ip)),
-    "A must be given if propensity_formula is not specified" =
-      !missing(propensity_formula) || !missing(A),
-    "A must be column name (character) of treatment variable in validation data" =
-      missing(A) || is.character(A),
-    "IP weights must be numeric and of same length as outcome" =
-      missing(ip) || ( is.numeric(ip) && length(ip) == length(Y) ),
-    "If we are bootstrapping, propensity formula must be given as this is used
-    in the bootstrap process" = missing(bootstrap) || !missing(propensity_formula)
-  )
-
-  if (!missing(propensity_formula)) {
-    if (!missing(A)) {
-      stopifnot("A must be the l.h.s. of propensity formula",
-                A == all.vars(propensity_formula)[1])
-    }
-    A <- all.vars(propensity_formula)[1]
-  }
-
-  if (!missing(model)) {
-    model <- make_x_as_list(model, treatments)
-    predictions <- lapply(
-      1:length(model),
-      function(i) predict_CF(model[[i]], data, A, treatments[[i]])
-    )
-  } else {
-    predictions <- make_x_as_list(predictions, treatments)
-  }
-
-  if (!missing(propensity_formula)) {
-    ip <- ip_weights(data, propensity_formula)
-  }
-
-
-  # peform actual analysis
-  results <- lapply(
-    X = 1:length(treatments),
-    FUN = function(i) {
-      CFscore_undertrt(data, predictions[[i]], Y, A, ip, trt = treatments[[i]], plot)
-    }
-  )
-  names(results) <- lapply(
-    X = treatments,
-    FUN = function(x) paste0("CF", x)
-  )
-
-  results$treatments <- treatments
-
-  # bootstrap
-  if (!missing(bootstrap)) {
-    b <- run_bootstrap(data, propensity_formula, predictions,
-                       Y, A, treatments, bootstrap)
-    results <- append(results, b)
-  }
-
-  results$weights <- ip
-
-  if (!missing(propensity_formula)) {
-    results$propensity <- propensity_formula
-    results$confounders <- all.vars(propensity_formula)[-1]
-  }
-  results$quiet <- quiet
-  class(results) <- "cfscore"
-  results
-}
-
+# CFscore <- function(data, model, predictions, Y, propensity_formula,
+#                     ip, A, treatments, bootstrap, plot = TRUE, quiet = FALSE) {
+#
+#   # check inputs and make consistent
+#   n_t <- length(treatments)
+#   if (!missing(model)) {
+#     n_models <- ifelse("list" %in% class(model), length(model), 1)
+#   }
+#   if (!missing(predictions)) {
+#     if (is.numeric(predictions)) {
+#       n_models <- 1
+#     } else if (is.list(predictions)) {
+#       stopifnot("Predictions should either be a numeric vector or a list of
+#                 numeric vectors" = is.numeric(predictions[[1]]))
+#       n_models <- length(predictions)
+#     } else {
+#       stop("Predictions should either be a numeric vector or a list of
+#            numeric vectors.")
+#     }
+#   }
+#
+#   if (is.character(Y)) {
+#     Y <- data[[Y]]
+#   }
+#
+#   stopifnot(
+#     "Either model or predictions must be specified, and not both" =
+#       xor(missing(model), missing(predictions)),
+#     "There should be 1 model or a model for each treatment value" =
+#       missing(model) || n_models %in% c(1, n_t),
+#     "There should be 1 prediction vector or a list of prediction vectors for
+#     each treatment value" =
+#       missing(predictions) || n_models %in% c(1, n_t),
+#     "Either propensity formula or ip must be specified, and not both" =
+#       xor(missing(propensity_formula), missing(ip)),
+#     "A must be given if propensity_formula is not specified" =
+#       !missing(propensity_formula) || !missing(A),
+#     "A must be column name (character) of treatment variable in validation
+#     data" =
+#       missing(A) || is.character(A),
+#     "IP weights must be numeric and of same length as outcome" =
+#       missing(ip) || ( is.numeric(ip) && length(ip) == length(Y) ),
+#     "If we are bootstrapping, propensity formula must be given as this is used
+#     in the bootstrap process" =
+#       missing(bootstrap) || !missing(propensity_formula)
+#   )
+#
+#   if (!missing(propensity_formula)) {
+#     if (!missing(A)) {
+#       stopifnot("A must be the l.h.s. of propensity formula",
+#                 A == all.vars(propensity_formula)[1])
+#     }
+#     A <- all.vars(propensity_formula)[1]
+#   }
+#
+#   if (!missing(model)) {
+#     model <- make_x_as_list(model, treatments)
+#     predictions <- lapply(
+#       1:length(model),
+#       function(i) predict_CF(model[[i]], data, A, treatments[[i]])
+#     )
+#   } else {
+#     predictions <- make_x_as_list(predictions, treatments)
+#   }
+#
+#   if (!missing(propensity_formula)) {
+#     ip <- ip_weights(data, propensity_formula)
+#   }
+#
+#
+#   # peform actual analysis
+#   results <- lapply(
+#     X = 1:length(treatments),
+#     FUN = function(i) {
+#       CFscore_undertrt(data, predictions[[i]], Y, A, ip, trt = treatments[[i]],
+#                        plot)
+#     }
+#   )
+#   names(results) <- lapply(
+#     X = treatments,
+#     FUN = function(x) paste0("CF", x)
+#   )
+#
+#   results$treatments <- treatments
+#
+#   # bootstrap
+#   if (!missing(bootstrap)) {
+#     b <- run_bootstrap(data, propensity_formula, predictions,
+#                        Y, A, treatments, bootstrap)
+#     results <- append(results, b)
+#   }
+#
+#   results$weights <- ip
+#
+#   if (!missing(propensity_formula)) {
+#     results$propensity <- propensity_formula
+#     results$confounders <- all.vars(propensity_formula)[-1]
+#   }
+#   results$quiet <- quiet
+#   class(results) <- "cfscore"
+#   results
+# }
+#
 
 
 

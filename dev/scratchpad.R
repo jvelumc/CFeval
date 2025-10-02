@@ -2,6 +2,13 @@ naive_model <- glm(Y ~ A + P, family = "binomial", data = df_dev)
 causal_model <- glm(Y ~ A + P, family = "binomial", data = df_dev,
                     weights = ip_weights(df_dev, A ~ L))
 
+riskRegression::Score
+
+naive_model <- lm(Y ~ A + P, data = df_dev)
+class(naive_model)
+
+
+
 b <- CFscore(data = df_val,
              model = causal_model,
              Y = "Y",
