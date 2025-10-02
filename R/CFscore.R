@@ -36,27 +36,6 @@ CFscore_undertrt <- function(data, cf, Y, A_column_name, ipw, trt, plot) {
   )
 }
 
-# input: single element or list of length 1 or length(treatments) output: a list
-# of length treatments, where each element is input, possibly repeated
-make_x_as_list <- function(x, treatments) {
-  n_t <- length(treatments)
-  n_x <- ifelse("list" %in% class(x), length(x), 1) # do we have a list of x or just 1?
-
-  if ("list" %in% class(x)) {
-    if (length(x) == 1) {
-      return(replicate(n_t, x[[1]], simplify = FALSE))
-    } else {
-      stopifnot(
-        "Number of predictions/models is incompatible with number of treatments" =
-          length(x) == n_t
-      )
-      return(x)
-    }
-  } else {
-    return(replicate(n_t, x, simplify = FALSE))
-  }
-}
-
 make_list_if_not_list <- function(x) {
   if ("list" %in% class(x))
     return(x)
