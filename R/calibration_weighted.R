@@ -5,9 +5,11 @@ generate_calibration_plot <- function(mean_preds, mean_obs, title, ylab) {
   graphics::abline(0, 1, col = "red")
 }
 
+# there is some inconsistency here: this function requires all outcomes/preds,
+# while the auc/brier requires only the outcomes/preds of the patients with
+# correct treatment level
 calibration_weighted <- function(outcomes, predictions, treatments,
-                                 treatment_of_interest, weights,
-                                 plot = TRUE) {
+                                 treatment_of_interest, weights) {
 
   # Observed / expected ratio
   # We have expected for everyone (just the predicted probability)
@@ -20,38 +22,38 @@ calibration_weighted <- function(outcomes, predictions, treatments,
     w = weights[treatments == treatment_of_interest]
   )
 
-  oe_ratio <- observed/expected
+  observed/expected
+}
 
-  calibration <- list(
-    "OEratio" = oe_ratio
+calibration_plot_weighted <- function(outcomes, predictions, treatments,
+                                      treatment_of_interest, weights) {
+
+  n_breaks <- 8
+
+  cal <- data.frame(A = treatments, Y = outcomes, ipw = weights,
+                    pred = predictions)
+  cal <- cal[order(predictions), ]
+  cal$group <- cut(cal$pred, breaks = 8, label = F)
+
+  mean_preds <- tapply(cal$pred, cal$group, mean)
+  cal_trt <- cal[cal$A == treatment_of_interest, ]
+  mean_obs <- tapply(
+    X = cal_trt,
+    INDEX = cal_trt$group,
+    FUN = function(x) stats::weighted.mean(x$Y, x$ipw)
   )
 
-  if (plot != FALSE) {
-    n_breaks <- 8
-
-    cal <- data.frame(A = treatments, Y = outcomes, ipw = weights, pred = predictions)
-    cal <- cal[order(predictions), ]
-    cal$group <- cut(cal$pred, breaks = 8, label = F)
-
-    mean_preds <- tapply(cal$pred, cal$group, mean)
-    cal_trt <- cal[cal$A == treatment_of_interest, ]
-    mean_obs <- tapply(
-      X = cal_trt,
-      INDEX = cal_trt$group,
-      FUN = function(x) stats::weighted.mean(x$Y, x$ipw)
-    )
-
-    calibration$plot <- function() {
-      generate_calibration_plot(
-        mean_preds = mean_preds,
-        mean_obs = mean_obs,
-        title = paste0("Calibration plot had everyone followed treatment ",
-                       treatment_of_interest),
-        ylab = "Counterfactual observed risk")
-    }
+  calplot <- function() {
+    generate_calibration_plot(
+      mean_preds = mean_preds,
+      mean_obs = mean_obs,
+      title = paste0("Calibration plot had everyone followed treatment ",
+                     treatment_of_interest),
+      ylab = "Counterfactual observed risk")
   }
-  return(calibration)
+  return(calplot)
 }
+
 
 calibration <- function(outcomes, predictions, plot = TRUE) {
   expected <- mean(predictions)

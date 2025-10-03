@@ -27,29 +27,51 @@ CFscore_undertrt <- function(data, cf, Y, A_column_name, ipw, trt, metrics) {
     )
   }
 
-  if ("oe" %in% metrics | "oeplot" %in% metrics) {
-    calibration <- calibration_weighted(
+  if ("oe" %in% metrics) {
+    results$oe <- calibration_weighted(
       outcomes = Y,
       predictions = cf,
       treatments = data[[A_column_name]],
       treatment_of_interest = trt,
-      weights = ipw,
-      plot = "oeplot" %in% metrics
+      weights = ipw
     )
-    results$oe <- calibration$OEratio
-    results$oeplot <- calibration$plot
+  }
+
+  if ("oeplot" %in% metrics) {
+    results$plot <- calibration_plot_weighted(
+      outcomes = Y,
+      predictions = cf,
+      treatments = data[[A_column_name]],
+      treatment_of_interest = trt,
+      weights = ipw
+    )
   }
 
   return(results)
 }
 
-make_list_if_not_list <- function(x) {
-  if ("list" %in% class(x)) {
-    return(x)
-  } else {
-    return(list(x))
-  }
+name_unnamed_list <- function(x) {
+  # give names, if not named
+  sapply(
+    1:length(x),
+    function(i)
+
+      if (is.null(names(x)[i]) || names(x)[i] == "") {
+        paste0("model.", i)
+      } else {
+        names(x[i])
+      }
+  )
 }
+
+make_list_if_not_list <- function(x) {
+  if (!("list" %in% class(x)))
+    x <- list(x)
+  names(x) <- name_unnamed_list(x)
+  x
+}
+
+
 
 
 CFscore <- function(validation_data, model, predictions, outcome_column,
@@ -76,6 +98,7 @@ CFscore <- function(validation_data, model, predictions, outcome_column,
   # extract predictions from models
   if (!missing(model)) {
     model <- make_list_if_not_list(model)
+
     predictions <- lapply(model, function(mod) {
       predict_CF(
         model = mod,
@@ -126,8 +149,6 @@ CFscore <- function(validation_data, model, predictions, outcome_column,
       )
     }
   )
-
-  #
 
   cfscore$n_models <- n_models
 
