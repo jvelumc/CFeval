@@ -3,19 +3,15 @@ bootstrap_iteration <- function(data, propensity_formula, predictions,
                                 Y, A, treatment_of_interest, metrics) {
   bs_sample <- sample(nrow(data), size = nrow(data), replace = T)
   bs_ip <- ip_weights(data[bs_sample, ], propensity_formula)
-  bs_results <- lapply(
-    X = predictions,
-    FUN = function(pred) {
-      CFscore_undertrt(
-        data = data[bs_sample, ],
-        cf = pred[bs_sample],
-        Y = Y[bs_sample],
-        A_column_name = A,
-        ipw = bs_ip,
-        trt = treatment_of_interest,
-        metrics = metrics
-      )
-    }
+  bs_results <- CFscore_undertrt(
+    data = data,
+    cf = predictions,
+    Y = Y,
+    A_column_name = A,
+    ipw = bs_ip,
+    trt = treatment_of_interest,
+    metrics = metrics,
+    sample = bs_sample
   )
   bs_results
 }
@@ -44,7 +40,7 @@ ci <- function(values, cover = 0.95) {
 get_bootstrapped_metric <- function(bootstrap_results, modelnumber, metric) {
   sapply(
     X = bootstrap_results,
-    FUN = function(boot_iter) boot_iter[[modelnumber]][[metric]]
+    FUN = function(boot_iter) boot_iter[[metric]][[modelnumber]]
   )
 }
 
@@ -59,24 +55,23 @@ run_bootstrap <- function(data, propensity_formula, predictions,
     "bootstrapping"
   )
 
+  # collect bootstrap results into vectors
   bootstrap_metrics <- lapply(
-    X = 1:length(predictions),
-    FUN = function(modelnumber) {
-      bootstrapped_metrics_model <- lapply(
-        X = metrics,
-        FUN = function(metric) {
-          get_bootstrapped_metric(b, modelnumber, metric)
-        }
+    X = metrics,
+    FUN = function(metric) {
+      setNames(
+        lapply(
+          X = 1:length(predictions),
+          FUN = function(modelnumber) {
+            get_bootstrapped_metric(b, modelnumber, metric)
+          }
+        ),
+        names(predictions)
       )
-      setNames(bootstrapped_metrics_model, metrics)
     }
   )
 
-  # do something special with bootstrapped calibration plots here.
-  # it returns NULL because the get_bootstrapped_metric doesnt fails somehow
-  # for functions
-
-  setNames(bootstrap_metrics, names(predictions))
+  return(bootstrap_metrics)
 }
 
 

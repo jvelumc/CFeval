@@ -5,47 +5,63 @@ predict_CF <- function(model, data, A_column, CF_treatment) {
   stats::predict(model, newdata = data, type = "response")
 }
 
-CFscore_undertrt <- function(data, cf, Y, A_column_name, ipw, trt, metrics) {
+CFscore_undertrt <- function(data, cf, Y, A_column_name, ipw, trt,
+                             metrics, sample = 1:nrow(data)) {
+  lapply(
+    X = metrics, # Name metrics s.t. result is also named
+    FUN = function(metric) {
+      lapply(
+        X = cf,
+        FUN = function(pred) {
+          CFscore_undertrt_metric_pred(
+            data[sample, ], pred[sample], Y[sample],
+            A_column_name, ipw, trt, metric
+          )
+        }
+      )
+    }
+  )
+}
+
+CFscore_undertrt_metric_pred <- function(data, cf, Y, A_column_name, ipw, trt,
+                                         metric) {
   # rows of patients with trt of interest
   trt_ids <- data[[A_column_name]] == trt
 
-  results <- list()
-  for (m in metrics) { # loop over metrics so the order of metrics is preserved
-    if (m == "brier") {
-      results$brier <- brier_weighted(
-        predictions = cf[trt_ids],
-        outcomes = Y[trt_ids],
-        weights = ipw[trt_ids]
-      )
-    }
+  if (metric == "brier") {
+    results <- brier_weighted(
+      predictions = cf[trt_ids],
+      outcomes = Y[trt_ids],
+      weights = ipw[trt_ids]
+    )
+  }
 
-    if (m == "auc") {
-      results$auc <- auc_weighted(
-        predictions = cf[trt_ids],
-        outcomes = Y[trt_ids],
-        weights = ipw[trt_ids]
-      )
-    }
+  if (metric == "auc") {
+    results <- auc_weighted(
+      predictions = cf[trt_ids],
+      outcomes = Y[trt_ids],
+      weights = ipw[trt_ids]
+    )
+  }
 
-    if (m == "oe") {
-      results$oe <- calibration_weighted(
-        outcomes = Y,
-        predictions = cf,
-        treatments = data[[A_column_name]],
-        treatment_of_interest = trt,
-        weights = ipw
-      )
-    }
+  if (metric == "oe") {
+    results <- calibration_weighted(
+      outcomes = Y,
+      predictions = cf,
+      treatments = data[[A_column_name]],
+      treatment_of_interest = trt,
+      weights = ipw
+    )
+  }
 
-    if (m == "oeplot") {
-      results$plot <- calibration_plot_weighted(
-        outcomes = Y,
-        predictions = cf,
-        treatments = data[[A_column_name]],
-        treatment_of_interest = trt,
-        weights = ipw
-      )
-    }
+  if (metric == "oeplot") {
+    results <- calibration_plot_weighted(
+      outcomes = Y,
+      predictions = cf,
+      treatments = data[[A_column_name]],
+      treatment_of_interest = trt,
+      weights = ipw
+    )
   }
 
   return(results)
@@ -135,21 +151,19 @@ CFscore <- function(validation_data, model, predictions, outcome_column,
     predictions <- c(list("null.model" = null_preds), predictions)
   }
 
+  # make metric named
+  names(metrics) <- metrics
+
   cfscore <- list()
 
-  cfscore$results <- lapply(
-    X = predictions,
-    FUN = function(pred) {
-      CFscore_undertrt(
-        data = validation_data,
-        cf = pred,
-        Y = outcome_column,
-        A_column_name = treatment_column,
-        ipw = ipweights,
-        trt = treatment_of_interest,
-        metrics = metrics
-      )
-    }
+  cfscore$results <- CFscore_undertrt(
+    data = validation_data,
+    cf = predictions,
+    Y = outcome_column,
+    A_column_name = treatment_column,
+    ipw = ipweights,
+    trt = treatment_of_interest,
+    metric = metrics
   )
 
   if (bootstrap == TRUE) {
