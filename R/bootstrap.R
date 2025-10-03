@@ -71,7 +71,12 @@ run_bootstrap <- function(data, propensity_formula, predictions,
       setNames(bootstrapped_metrics_model, metrics)
     }
   )
-  setNames(object = bootstrap_metrics, nm = names(predictions))
+
+  # do something special with bootstrapped calibration plots here.
+  # it returns NULL because the get_bootstrapped_metric doesnt fails somehow
+  # for functions
+
+  setNames(bootstrap_metrics, names(predictions))
 }
 
 

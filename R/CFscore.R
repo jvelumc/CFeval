@@ -10,41 +10,42 @@ CFscore_undertrt <- function(data, cf, Y, A_column_name, ipw, trt, metrics) {
   trt_ids <- data[[A_column_name]] == trt
 
   results <- list()
+  for (m in metrics) { # loop over metrics so the order of metrics is preserved
+    if (m == "brier") {
+      results$brier <- brier_weighted(
+        predictions = cf[trt_ids],
+        outcomes = Y[trt_ids],
+        weights = ipw[trt_ids]
+      )
+    }
 
-  if ("brier" %in% metrics) {
-    results$brier <- brier_weighted(
-      predictions = cf[trt_ids],
-      outcomes = Y[trt_ids],
-      weights = ipw[trt_ids]
-    )
-  }
+    if (m == "auc") {
+      results$auc <- auc_weighted(
+        predictions = cf[trt_ids],
+        outcomes = Y[trt_ids],
+        weights = ipw[trt_ids]
+      )
+    }
 
-  if ("auc" %in% metrics) {
-    results$auc <- auc_weighted(
-      predictions = cf[trt_ids],
-      outcomes = Y[trt_ids],
-      weights = ipw[trt_ids]
-    )
-  }
+    if (m == "oe") {
+      results$oe <- calibration_weighted(
+        outcomes = Y,
+        predictions = cf,
+        treatments = data[[A_column_name]],
+        treatment_of_interest = trt,
+        weights = ipw
+      )
+    }
 
-  if ("oe" %in% metrics) {
-    results$oe <- calibration_weighted(
-      outcomes = Y,
-      predictions = cf,
-      treatments = data[[A_column_name]],
-      treatment_of_interest = trt,
-      weights = ipw
-    )
-  }
-
-  if ("oeplot" %in% metrics) {
-    results$plot <- calibration_plot_weighted(
-      outcomes = Y,
-      predictions = cf,
-      treatments = data[[A_column_name]],
-      treatment_of_interest = trt,
-      weights = ipw
-    )
+    if (m == "oeplot") {
+      results$plot <- calibration_plot_weighted(
+        outcomes = Y,
+        predictions = cf,
+        treatments = data[[A_column_name]],
+        treatment_of_interest = trt,
+        weights = ipw
+      )
+    }
   }
 
   return(results)
