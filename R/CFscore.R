@@ -79,6 +79,7 @@ CFscore <- function(validation_data, model, predictions, outcome_column,
                     treatment_column, treatment_of_interest,
                     metrics = c("auc", "brier", "oe", "oeplot"),
                     null.model = TRUE, bootstrap = FALSE,
+                    bootstrap_iterations = 200,
                     quiet = FALSE) {
   check_missing(validation_data)
   check_missing_xor(model, predictions)
@@ -118,7 +119,7 @@ CFscore <- function(validation_data, model, predictions, outcome_column,
 
   correct_trt_id <- validation_data[[treatment_column]] == treatment_of_interest
 
-  # fit a null model
+  # fit a null model on counterfactual validation data
   if (null.model == TRUE) {
     null_model <- lm(
       outcome_column[correct_trt_id] ~ 1,
@@ -149,6 +150,20 @@ CFscore <- function(validation_data, model, predictions, outcome_column,
       )
     }
   )
+
+  if (bootstrap == TRUE) {
+    b <- run_bootstrap(
+      data = validation_data,
+      propensity_formula = propensity_formula,
+      predictions = predictions,
+      Y = outcome_column,
+      A = treatment_column,
+      treatment_of_interest = treatment_of_interest,
+      metrics = metrics,
+      iterations = bootstrap_iterations
+    )
+    cfscore$b <- b
+  }
 
   cfscore$n_models <- n_models
 

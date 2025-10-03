@@ -1,3 +1,9 @@
-assumptions
-rename to cfeval
-testing
+To discuss:
+---
+On what data is the null model trained? Development data? Observed validation
+data? CF validation data?
+---
+How is the null model bootstrapped?
+---
+What does a bootstrapped calibration plot look like?
+---
