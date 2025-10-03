@@ -48,7 +48,7 @@
 <div class="page-header"><h1 id="cfeval--">CFeval <!-- badges: start --> <!-- badges: end -->
 <a class="anchor" aria-label="anchor" href="#cfeval--"></a>
 </h1></div>
-<p>Predictions under interventions are estimates of what a subject’s risk would be if they were to follow a certain counterfactual treatment. Assessing predictive performance for these predictions is challenging, as only the outcome of the realized treatment can be observed.(Keogh, van Geloven, DOI 10.1097/EDE.0000000000001713). This R package facilitates assessing counterfactual performance of interventional predictions.</p>
+<p>Prediction under interventions considers estimating what a subject’s risk would be if they were to receive a certain treatment. Likewise one may be interested in assessing predictive performance in a setting where all individuals were to receive a certain treatment. This is challenging, as only the outcome of the realized treatment level can be observed in the data, and outcomes under any treatment level are counterfactual.(Keogh, van Geloven, DOI 10.1097/EDE.0000000000001713). This R package facilitates assessing counterfactual predictive performance.</p>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
@@ -60,19 +60,34 @@
 <div class="section level2">
 <h2 id="toy-example">Toy example<a class="anchor" aria-label="anchor" href="#toy-example"></a>
 </h2>
-<p>Simulate some example data for binary outcome Y and (point) treatment A, confounded by a variable L. Variable P is a prognostic variable for only the outcome. The treatment reduces the risk on a bad outcome (Y = 1) in this simulated example. The R package contains a 5000 row df_dev and a 4000 row df_val, both simulated as described.</p>
+<p>Simulate example data for binary outcome Y and (point) treatment A, with the relation between A and Y confounded by a variable L. Variable P is a prognostic variable for only the outcome. The treatment reduces the risk on a bad outcome (Y = 1) in this simulated example. The R package contains a 5000 row df_dev and a 4000 row df_val, both simulated as described.</p>
 <figure><img src="reference/figures/dag.png" alt="Figure 1. DAG for toy example"><figcaption aria-hidden="true">
 Figure 1. DAG for toy example
 </figcaption></figure><div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://jvelumc.github.io/CFeval/">CFeval</a></span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">simulate_data</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">n</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="va">df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>id <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="va">n</span><span class="op">)</span></span>
+<span>  <span class="va">df</span><span class="op">$</span><span class="va">L</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n</span><span class="op">)</span></span>
+<span>  <span class="va">df</span><span class="op">$</span><span class="va">A</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Binomial.html" class="external-link">rbinom</a></span><span class="op">(</span><span class="va">n</span>, <span class="fl">1</span>, <span class="fu"><a href="https://rdrr.io/r/stats/Logistic.html" class="external-link">plogis</a></span><span class="op">(</span><span class="va">df</span><span class="op">$</span><span class="va">L</span><span class="op">)</span><span class="op">)</span></span>
+<span>  <span class="va">df</span><span class="op">$</span><span class="va">P</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n</span><span class="op">)</span></span>
+<span>  <span class="va">df</span><span class="op">$</span><span class="va">Y</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Binomial.html" class="external-link">rbinom</a></span><span class="op">(</span><span class="va">n</span>, <span class="fl">1</span>, <span class="fu"><a href="https://rdrr.io/r/stats/Logistic.html" class="external-link">plogis</a></span><span class="op">(</span><span class="fl">0.5</span> <span class="op">+</span> <span class="va">df</span><span class="op">$</span><span class="va">L</span> <span class="op">+</span> <span class="fl">1.25</span> <span class="op">*</span> <span class="va">df</span><span class="op">$</span><span class="va">P</span> <span class="op">-</span> <span class="fl">0.6</span><span class="op">*</span><span class="va">df</span><span class="op">$</span><span class="va">A</span><span class="op">)</span><span class="op">)</span></span>
+<span>  <span class="kw"><a href="https://rdrr.io/r/base/function.html" class="external-link">return</a></span><span class="op">(</span><span class="va">df</span><span class="op">)</span></span>
+<span><span class="op">}</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">123</span><span class="op">)</span></span>
+<span><span class="va">df_dev</span> <span class="op">&lt;-</span> <span class="fu">simulate_data</span><span class="op">(</span><span class="fl">5000</span><span class="op">)</span></span>
+<span><span class="va">df_val</span> <span class="op">&lt;-</span> <span class="fu">simulate_data</span><span class="op">(</span><span class="fl">4000</span><span class="op">)</span></span>
+<span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">df_dev</span><span class="op">)</span></span>
-<span><span class="co">#&gt;   id           L A          P Y0 Y1 Y</span></span>
-<span><span class="co">#&gt; 1  1 -0.56047565 0  0.3500025  1  0 1</span></span>
-<span><span class="co">#&gt; 2  2 -0.23017749 0  0.8144417  0  0 0</span></span>
-<span><span class="co">#&gt; 3  3  1.55870831 0 -0.5166661  0  1 0</span></span>
-<span><span class="co">#&gt; 4  4  0.07050839 1 -2.6922644  0  0 0</span></span>
-<span><span class="co">#&gt; 5  5  0.12928774 1 -1.0969546  0  0 0</span></span>
-<span><span class="co">#&gt; 6  6  1.71506499 1 -1.2554751  1  1 1</span></span></code></pre></div>
+<span><span class="co">#&gt;   id           L A          P Y</span></span>
+<span><span class="co">#&gt; 1  1 -0.56047565 0  0.3500025 1</span></span>
+<span><span class="co">#&gt; 2  2 -0.23017749 0  0.8144417 0</span></span>
+<span><span class="co">#&gt; 3  3  1.55870831 0 -0.5166661 0</span></span>
+<span><span class="co">#&gt; 4  4  0.07050839 1 -2.6922644 0</span></span>
+<span><span class="co">#&gt; 5  5  0.12928774 1 -1.0969546 0</span></span>
+<span><span class="co">#&gt; 6  6  1.71506499 1 -1.2554751 1</span></span></code></pre></div>
+<p>We will use df_dev for model development. The independent df_val will be used to validate the model performance.</p>
 <p>Fitting a logistic regression model on this data without accounting for the confounder L results in a model where treatment apparently increases the risk on the outcome</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">naive_model</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span><span class="va">Y</span> <span class="op">~</span> <span class="va">A</span> <span class="op">+</span> <span class="va">P</span>, family <span class="op">=</span> <span class="st">"binomial"</span>, data <span class="op">=</span> <span class="va">df_dev</span><span class="op">)</span></span>
@@ -83,60 +98,65 @@ Figure 1. DAG for toy example
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Coefficients:</span></span>
 <span><span class="co">#&gt;             Estimate Std. Error z value Pr(&gt;|z|)    </span></span>
-<span><span class="co">#&gt; (Intercept)  0.11397    0.04514   2.525  0.01157 *  </span></span>
-<span><span class="co">#&gt; A            0.20486    0.06394   3.204  0.00135 ** </span></span>
-<span><span class="co">#&gt; P            1.13624    0.03941  28.828  &lt; 2e-16 ***</span></span>
+<span><span class="co">#&gt; (Intercept)  0.11227    0.04483   2.504  0.01227 *  </span></span>
+<span><span class="co">#&gt; A            0.16547    0.06342   2.609  0.00908 ** </span></span>
+<span><span class="co">#&gt; P            1.09134    0.03862  28.257  &lt; 2e-16 ***</span></span>
 <span><span class="co">#&gt; ---</span></span>
 <span><span class="co">#&gt; Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; (Dispersion parameter for binomial family taken to be 1)</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;     Null deviance: 6897.8  on 4999  degrees of freedom</span></span>
-<span><span class="co">#&gt; Residual deviance: 5746.9  on 4997  degrees of freedom</span></span>
-<span><span class="co">#&gt; AIC: 5752.9</span></span>
+<span><span class="co">#&gt;     Null deviance: 6903.5  on 4999  degrees of freedom</span></span>
+<span><span class="co">#&gt; Residual deviance: 5819.2  on 4997  degrees of freedom</span></span>
+<span><span class="co">#&gt; AIC: 5825.2</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Number of Fisher Scoring iterations: 4</span></span></code></pre></div>
 <p>Fitting a model using IP-weighting to account for the confounder results in a model where treatment decreases the risk on the outcome, which we know to be true in our simulated data</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">causal_model</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span><span class="va">Y</span> <span class="op">~</span> <span class="va">A</span> <span class="op">+</span> <span class="va">P</span>, family <span class="op">=</span> <span class="st">"binomial"</span>, data <span class="op">=</span> <span class="va">df_dev</span>, </span>
-<span>                    weights <span class="op">=</span> <span class="fu"><a href="reference/ip_weights.html">ip_weights</a></span><span class="op">(</span><span class="va">df_dev</span>, <span class="va">A</span> <span class="op">~</span> <span class="va">L</span><span class="op">)</span><span class="op">)</span></span>
+<code class="sourceCode R"><span></span>
+<span><span class="va">propensity_model</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span><span class="va">A</span> <span class="op">~</span> <span class="va">L</span>, family <span class="op">=</span> <span class="st">"binomial"</span>, <span class="va">df_dev</span><span class="op">)</span></span>
+<span><span class="va">prop_score</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">propensity_model</span>, type <span class="op">=</span> <span class="st">"response"</span><span class="op">)</span></span>
+<span><span class="va">prob_trt</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span><span class="va">df_dev</span><span class="op">$</span><span class="va">A</span> <span class="op">==</span> <span class="fl">1</span>, <span class="va">prop_score</span>, <span class="fl">1</span> <span class="op">-</span> <span class="va">prop_score</span><span class="op">)</span></span>
+<span><span class="va">ipw</span> <span class="op">&lt;-</span> <span class="fl">1</span> <span class="op">/</span> <span class="va">prob_trt</span></span>
+<span></span>
+<span><span class="va">causal_model</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span><span class="va">Y</span> <span class="op">~</span> <span class="va">A</span> <span class="op">+</span> <span class="va">P</span>, family <span class="op">=</span> <span class="st">"binomial"</span>, data <span class="op">=</span> <span class="va">df_dev</span>, </span>
+<span>                    weights <span class="op">=</span> <span class="va">ipw</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Warning in eval(family$initialize): non-integer #successes in a binomial glm!</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">causal_model</span><span class="op">)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Call:</span></span>
 <span><span class="co">#&gt; glm(formula = Y ~ A + P, family = "binomial", data = df_dev, </span></span>
-<span><span class="co">#&gt;     weights = ip_weights(df_dev, A ~ L))</span></span>
+<span><span class="co">#&gt;     weights = ipw)</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Coefficients:</span></span>
 <span><span class="co">#&gt;             Estimate Std. Error z value Pr(&gt;|z|)    </span></span>
-<span><span class="co">#&gt; (Intercept)  0.43502    0.03222   13.50   &lt;2e-16 ***</span></span>
-<span><span class="co">#&gt; A           -0.45611    0.04532  -10.06   &lt;2e-16 ***</span></span>
-<span><span class="co">#&gt; P            1.11034    0.02763   40.19   &lt;2e-16 ***</span></span>
+<span><span class="co">#&gt; (Intercept)  0.43083    0.03207   13.44   &lt;2e-16 ***</span></span>
+<span><span class="co">#&gt; A           -0.48505    0.04514  -10.75   &lt;2e-16 ***</span></span>
+<span><span class="co">#&gt; P            1.08065    0.02727   39.62   &lt;2e-16 ***</span></span>
 <span><span class="co">#&gt; ---</span></span>
 <span><span class="co">#&gt; Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; (Dispersion parameter for binomial family taken to be 1)</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt;     Null deviance: 13788  on 4999  degrees of freedom</span></span>
-<span><span class="co">#&gt; Residual deviance: 11517  on 4997  degrees of freedom</span></span>
-<span><span class="co">#&gt; AIC: 11282</span></span>
+<span><span class="co">#&gt;     Null deviance: 13798  on 4999  degrees of freedom</span></span>
+<span><span class="co">#&gt; Residual deviance: 11602  on 4997  degrees of freedom</span></span>
+<span><span class="co">#&gt; AIC: 11383</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Number of Fisher Scoring iterations: 4</span></span></code></pre></div>
-<p>If either model is to be used to decide on treatment options A, we need accurate estimates of the counterfactual risk on outcome under both treatment options A = 1 and A = 0.</p>
-<p>Validating a model capable of estimating counterfactual risks is challenging. This package aims to guide the user in assessing how well the predictions would match the validation data if all individuals had followed the treatment under which predictions are made.</p>
-<p>The main function CFscore() estimates these counterfactual performance measures in a validation dataset, printing all assumptions required along the way.</p>
+<p>From now on we assume some model has been developed (be it a good or a bad one), and we want to know if it provides accurate estimates of the counterfactual risk on outcome under both treatment options a = 1 and a = 0.</p>
+<p>This package aims to help the user in assessing how well the predictions would match the validation data if all individuals in the validation data had followed a certain treatment option of interest.</p>
+<p>The main function CFscore() estimates several counterfactual performance measures in a validation dataset, printing the assumptions required along the way.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">results_causal</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/CFscore.html">CFscore</a></span><span class="op">(</span></span>
-<span>  data <span class="op">=</span> <span class="va">df_val</span>,</span>
-<span>  model <span class="op">=</span> <span class="va">causal_model</span>, </span>
-<span>  Y <span class="op">=</span> <span class="st">"Y"</span>, </span>
+<code class="sourceCode R"><span><span class="va">results_CF0</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/CFscore.html">CFscore</a></span><span class="op">(</span></span>
+<span>  validation_data <span class="op">=</span> <span class="va">df_val</span>,</span>
+<span>  model <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="st">"naive model"</span> <span class="op">=</span> <span class="va">naive_model</span>, <span class="st">"causal model"</span> <span class="op">=</span> <span class="va">causal_model</span><span class="op">)</span>, </span>
+<span>  outcome_column <span class="op">=</span> <span class="st">"Y"</span>, </span>
 <span>  propensity_formula <span class="op">=</span> <span class="va">A</span> <span class="op">~</span> <span class="va">L</span>, </span>
-<span>  treatments <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">1</span><span class="op">)</span></span>
+<span>  treatment_of_interest <span class="op">=</span> <span class="fl">0</span></span>
 <span><span class="op">)</span></span>
-<span><span class="va">results_causal</span></span>
+<span><span class="va">results_CF0</span></span>
 <span><span class="co">#&gt; Estimation of the performance of the prediction model in a</span></span>
-<span><span class="co">#&gt;  counterfactual (CF) dataset where everyone's treatment was set to 0 and</span></span>
-<span><span class="co">#&gt;  1.</span></span>
+<span><span class="co">#&gt;  counterfactual (CF) dataset where everyone's treatment A was set to 0.</span></span>
 <span><span class="co">#&gt; The following assumptions must be satisfied for correct inference:</span></span>
 <span><span class="co">#&gt; - Conditional exchangeability requires that {L} are sufficient to</span></span>
 <span><span class="co">#&gt;  adjust for confounding and selection bias between treatment and</span></span>
@@ -144,138 +164,125 @@ Figure 1. DAG for toy example
 <span><span class="co">#&gt; - Positivity (assess $weights for outliers)</span></span>
 <span><span class="co">#&gt; - Consistency</span></span>
 <span><span class="co">#&gt; - No interference</span></span>
-<span><span class="co">#&gt; - No measurement error</span></span>
 <span><span class="co">#&gt; - Correctly specified propensity formula</span></span>
-<span><span class="co">#&gt;    metric   CF0   CF1</span></span>
-<span><span class="co">#&gt; 1   Brier 0.197 0.212</span></span>
-<span><span class="co">#&gt; 2     auc 0.753 0.726</span></span>
-<span><span class="co">#&gt; 3 OEratio 1.003 0.991</span></span></code></pre></div>
-<p>Weights are exported:</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">results_causal</span><span class="op">$</span><span class="va">weights</span><span class="op">)</span></span>
-<span><span class="co">#&gt;    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. </span></span>
-<span><span class="co">#&gt;   1.017   1.339   1.644   1.996   2.207  14.425</span></span></code></pre></div>
-<p>And calibration plots:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">results_causal</span><span class="op">)</span></span></code></pre></div>
-<p><img src="reference/figures/README-unnamed-chunk-6-1.png" width="100%"><img src="reference/figures/README-unnamed-chunk-6-2.png" width="100%"></p>
-<p>Compare that to the counterfactual performance of the naive model:</p>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt;         model   auc brier    oe</span></span>
+<span><span class="co">#&gt;    null.model 0.500 0.244 1.000</span></span>
+<span><span class="co">#&gt;   naive model 0.741 0.204 1.115</span></span>
+<span><span class="co">#&gt;  causal model 0.741 0.201 0.994</span></span>
+<span><span class="co">#&gt; model:  null.model</span></span></code></pre></div>
+<p><img src="reference/figures/README-unnamed-chunk-4-1.png" width="100%"></p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb6-1"><a href="#cb6-1" tabindex="-1"></a><span class="co">#&gt; model:  naive model</span></span></code></pre></div>
+<p><img src="reference/figures/README-unnamed-chunk-4-2.png" width="100%"></p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="co">#&gt; model:  causal model</span></span></code></pre></div>
+<p><img src="reference/figures/README-unnamed-chunk-4-3.png" width="100%"> Weights are exported:</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">results_naive</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/CFscore.html">CFscore</a></span><span class="op">(</span></span>
-<span>  data <span class="op">=</span> <span class="va">df_val</span>,</span>
-<span>  model <span class="op">=</span> <span class="va">naive_model</span>,</span>
-<span>  Y <span class="op">=</span> <span class="st">"Y"</span>,</span>
-<span>  propensity_formula <span class="op">=</span> <span class="va">A</span> <span class="op">~</span> <span class="va">L</span>,</span>
-<span>  treatments <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">1</span><span class="op">)</span>,</span>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">results_CF0</span><span class="op">$</span><span class="va">ipweights</span><span class="op">)</span></span>
+<span><span class="co">#&gt;    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. </span></span>
+<span><span class="co">#&gt;   1.018   1.336   1.645   1.999   2.192  22.353</span></span></code></pre></div>
+<p>See also the counterfactual score under treatment option 1</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">results_CF1</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/CFscore.html">CFscore</a></span><span class="op">(</span></span>
+<span>  validation_data <span class="op">=</span> <span class="va">df_val</span>,</span>
+<span>  model <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="st">"naive model"</span> <span class="op">=</span> <span class="va">naive_model</span>, <span class="st">"causal model"</span> <span class="op">=</span> <span class="va">causal_model</span><span class="op">)</span>, </span>
+<span>  outcome_column <span class="op">=</span> <span class="st">"Y"</span>, </span>
+<span>  propensity_formula <span class="op">=</span> <span class="va">A</span> <span class="op">~</span> <span class="va">L</span>, </span>
+<span>  treatment_of_interest <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  quiet <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span>
-<span><span class="va">results_naive</span></span>
-<span><span class="co">#&gt;    metric   CF0   CF1</span></span>
-<span><span class="co">#&gt; 1   Brier 0.201 0.218</span></span>
-<span><span class="co">#&gt; 2     auc 0.753 0.726</span></span>
-<span><span class="co">#&gt; 3 OEratio 1.126 0.872</span></span></code></pre></div>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">results_naive</span><span class="op">)</span></span></code></pre></div>
-<p><img src="reference/figures/README-unnamed-chunk-8-1.png" width="100%"><img src="reference/figures/README-unnamed-chunk-8-2.png" width="100%"></p>
+<span><span class="va">results_CF1</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt;         model   auc brier    oe</span></span>
+<span><span class="co">#&gt;    null.model 0.500 0.244 1.000</span></span>
+<span><span class="co">#&gt;   naive model 0.741 0.204 1.115</span></span>
+<span><span class="co">#&gt;  causal model 0.741 0.201 0.994</span></span>
+<span><span class="co">#&gt; model:  null.model</span></span></code></pre></div>
+<p><img src="reference/figures/README-unnamed-chunk-6-1.png" width="100%"></p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="co">#&gt; model:  naive model</span></span></code></pre></div>
+<p><img src="reference/figures/README-unnamed-chunk-6-2.png" width="100%"></p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode R"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="co">#&gt; model:  causal model</span></span></code></pre></div>
+<p><img src="reference/figures/README-unnamed-chunk-6-3.png" width="100%"></p>
 </div>
 <div class="section level2">
 <h2 id="other-options">Other options<a class="anchor" aria-label="anchor" href="#other-options"></a>
 </h2>
 <p>Bootstrapping for 95% confidence intervals (95CI) - in this setting (sample size 4000, binary outcome and treatment, 1 confounder) takes about 30 seconds on my pc with 200 bootstrap iterations. Here we use 50 bootstraps to save time.</p>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/CFscore.html">CFscore</a></span><span class="op">(</span></span>
-<span>  data <span class="op">=</span> <span class="va">df_val</span>,</span>
-<span>  model <span class="op">=</span> <span class="va">causal_model</span>, </span>
-<span>  Y <span class="op">=</span> <span class="st">"Y"</span>, </span>
+<span>  validation_data <span class="op">=</span> <span class="va">df_val</span>,</span>
+<span>  model <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="st">"naive model"</span> <span class="op">=</span> <span class="va">naive_model</span>, <span class="st">"causal model"</span> <span class="op">=</span> <span class="va">causal_model</span><span class="op">)</span>, </span>
+<span>  outcome_column <span class="op">=</span> <span class="st">"Y"</span>, </span>
 <span>  propensity_formula <span class="op">=</span> <span class="va">A</span> <span class="op">~</span> <span class="va">L</span>, </span>
-<span>  treatments <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">1</span><span class="op">)</span>,</span>
-<span>  bootstrap <span class="op">=</span> <span class="fl">50</span>,</span>
+<span>  treatment_of_interest <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  metrics <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"auc"</span>, <span class="st">"brier"</span>, <span class="st">"oe"</span><span class="op">)</span>,</span>
+<span>  bootstrap <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  bootstrap_iterations <span class="op">=</span> <span class="fl">50</span>,</span>
 <span>  quiet <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span>
 <span><span class="co">#&gt;  bootstrapping :  1 / 50                            bootstrapping :  2 / 50                            bootstrapping :  3 / 50                            bootstrapping :  4 / 50                            bootstrapping :  5 / 50                            bootstrapping :  6 / 50                            bootstrapping :  7 / 50                            bootstrapping :  8 / 50                            bootstrapping :  9 / 50                            bootstrapping :  10 / 50                            bootstrapping :  11 / 50                            bootstrapping :  12 / 50                            bootstrapping :  13 / 50                            bootstrapping :  14 / 50                            bootstrapping :  15 / 50                            bootstrapping :  16 / 50                            bootstrapping :  17 / 50                            bootstrapping :  18 / 50                            bootstrapping :  19 / 50                            bootstrapping :  20 / 50                            bootstrapping :  21 / 50                            bootstrapping :  22 / 50                            bootstrapping :  23 / 50                            bootstrapping :  24 / 50                            bootstrapping :  25 / 50                            bootstrapping :  26 / 50                            bootstrapping :  27 / 50                            bootstrapping :  28 / 50                            bootstrapping :  29 / 50                            bootstrapping :  30 / 50                            bootstrapping :  31 / 50                            bootstrapping :  32 / 50                            bootstrapping :  33 / 50                            bootstrapping :  34 / 50                            bootstrapping :  35 / 50                            bootstrapping :  36 / 50                            bootstrapping :  37 / 50                            bootstrapping :  38 / 50                            bootstrapping :  39 / 50                            bootstrapping :  40 / 50                            bootstrapping :  41 / 50                            bootstrapping :  42 / 50                            bootstrapping :  43 / 50                            bootstrapping :  44 / 50                            bootstrapping :  45 / 50                            bootstrapping :  46 / 50                            bootstrapping :  47 / 50                            bootstrapping :  48 / 50                            bootstrapping :  49 / 50                            bootstrapping :  50 / 50                           </span></span>
-<span><span class="co">#&gt;    metric   CF0      CF0.95CI   CF1      CF1.95CI</span></span>
-<span><span class="co">#&gt; 1   Brier 0.197 0.194 - 0.203 0.212 0.208 - 0.214</span></span>
-<span><span class="co">#&gt; 2     auc 0.753 0.736 - 0.768 0.726 0.718 - 0.735</span></span>
-<span><span class="co">#&gt; 3 OEratio 1.003 0.977 - 1.022 0.991 0.988 - 1.014</span></span></code></pre></div>
-<p>Maybe we are only interested in counterfactual performance under level 1</p>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="reference/CFscore.html">CFscore</a></span><span class="op">(</span></span>
-<span>  data <span class="op">=</span> <span class="va">df_val</span>,</span>
-<span>  model <span class="op">=</span> <span class="va">causal_model</span>, </span>
-<span>  Y <span class="op">=</span> <span class="st">"Y"</span>, </span>
-<span>  propensity_formula <span class="op">=</span> <span class="va">A</span> <span class="op">~</span> <span class="va">L</span>, </span>
-<span>  treatments <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>  quiet <span class="op">=</span> <span class="cn">TRUE</span></span>
-<span><span class="op">)</span></span>
-<span><span class="co">#&gt;    metric   CF1</span></span>
-<span><span class="co">#&gt; 1   Brier 0.212</span></span>
-<span><span class="co">#&gt; 2     auc 0.726</span></span>
-<span><span class="co">#&gt; 3 OEratio 0.991</span></span></code></pre></div>
-<p>Maybe we have a model for each treatment level</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">df_dev</span><span class="op">$</span><span class="va">ip</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/ip_weights.html">ip_weights</a></span><span class="op">(</span><span class="va">df_dev</span>, <span class="va">A</span> <span class="op">~</span> <span class="va">L</span><span class="op">)</span></span>
-<span><span class="va">model0</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span><span class="va">Y</span> <span class="op">~</span> <span class="va">P</span>, family <span class="op">=</span> <span class="st">"binomial"</span>, data <span class="op">=</span> <span class="va">df_dev</span><span class="op">[</span><span class="va">df_dev</span><span class="op">$</span><span class="va">A</span> <span class="op">==</span> <span class="fl">0</span>, <span class="op">]</span>, weights <span class="op">=</span> <span class="va">ip</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning in eval(family$initialize): non-integer #successes in a binomial glm!</span></span>
-<span><span class="va">model1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span><span class="va">Y</span> <span class="op">~</span> <span class="va">P</span>, family <span class="op">=</span> <span class="st">"binomial"</span>, data <span class="op">=</span> <span class="va">df_dev</span><span class="op">[</span><span class="va">df_dev</span><span class="op">$</span><span class="va">A</span> <span class="op">==</span> <span class="fl">1</span>, <span class="op">]</span>, weights <span class="op">=</span> <span class="va">ip</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Warning in eval(family$initialize): non-integer #successes in a binomial glm!</span></span>
-<span></span>
-<span><span class="fu"><a href="reference/CFscore.html">CFscore</a></span><span class="op">(</span></span>
-<span>  data <span class="op">=</span> <span class="va">df_val</span>,</span>
-<span>  model <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">model0</span>, <span class="va">model1</span><span class="op">)</span>,</span>
-<span>  Y <span class="op">=</span> <span class="st">"Y"</span>,</span>
-<span>  propensity_formula <span class="op">=</span> <span class="va">A</span> <span class="op">~</span> <span class="va">L</span>,</span>
-<span>  treatments <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">1</span><span class="op">)</span>,</span>
-<span>  quiet <span class="op">=</span> <span class="cn">TRUE</span></span>
-<span><span class="op">)</span></span>
-<span><span class="co">#&gt;    metric   CF0   CF1</span></span>
-<span><span class="co">#&gt; 1   Brier 0.197 0.211</span></span>
-<span><span class="co">#&gt; 2     auc 0.753 0.726</span></span>
-<span><span class="co">#&gt; 3 OEratio 1.003 0.990</span></span></code></pre></div>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; auc</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt;         model   auc lower upper</span></span>
+<span><span class="co">#&gt;    null.model 0.500 0.500 0.500</span></span>
+<span><span class="co">#&gt;   naive model 0.741 0.723 0.764</span></span>
+<span><span class="co">#&gt;  causal model 0.741 0.723 0.764</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; brier</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt;         model brier lower upper</span></span>
+<span><span class="co">#&gt;    null.model 0.244 0.240 0.247</span></span>
+<span><span class="co">#&gt;   naive model 0.204 0.196 0.213</span></span>
+<span><span class="co">#&gt;  causal model 0.201 0.193 0.208</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; oe</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt;         model    oe lower upper</span></span>
+<span><span class="co">#&gt;    null.model 1.000 0.968  1.03</span></span>
+<span><span class="co">#&gt;   naive model 1.115 1.078  1.16</span></span>
+<span><span class="co">#&gt;  causal model 0.994 0.962  1.03</span></span></code></pre></div>
 <p>We can also give counterfactual predictions to CFscore, instead of models</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">cf0</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">model0</span>, newdata <span class="op">=</span> <span class="va">df_val</span>, type <span class="op">=</span> <span class="st">"response"</span><span class="op">)</span></span>
-<span><span class="va">cf1</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">model1</span>, newdata <span class="op">=</span> <span class="va">df_val</span>, type <span class="op">=</span> <span class="st">"response"</span><span class="op">)</span></span>
+<code class="sourceCode R"><span></span>
+<span><span class="co"># this is a bit stupid example, defining df_valA0 and then using df_val in CFscore. Makes more sense when you have complicated prediction, such as for time dependent confounding. Don't pay too much attention to this right now.</span></span>
+<span><span class="va">df_valA0</span> <span class="op">&lt;-</span> <span class="va">df_val</span></span>
+<span><span class="va">df_valA0</span><span class="op">$</span><span class="va">A</span> <span class="op">&lt;-</span> <span class="fl">0</span></span>
+<span><span class="va">cf0</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">causal_model</span>, newdata <span class="op">=</span> <span class="va">df_valA0</span>, type <span class="op">=</span> <span class="st">"response"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="reference/CFscore.html">CFscore</a></span><span class="op">(</span></span>
-<span>  data <span class="op">=</span> <span class="va">df_val</span>,</span>
-<span>  predictions <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">cf0</span>, <span class="va">cf1</span><span class="op">)</span>,</span>
-<span>  Y <span class="op">=</span> <span class="st">"Y"</span>,</span>
-<span>  propensity_formula <span class="op">=</span> <span class="va">A</span> <span class="op">~</span> <span class="va">L</span>,</span>
-<span>  treatments <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">1</span><span class="op">)</span>,</span>
+<span>  validation_data <span class="op">=</span> <span class="va">df_val</span>,</span>
+<span>  predictions <span class="op">=</span> <span class="va">cf0</span>,</span>
+<span>  outcome_column <span class="op">=</span> <span class="st">"Y"</span>, </span>
+<span>  propensity_formula <span class="op">=</span> <span class="va">A</span> <span class="op">~</span> <span class="va">L</span>, </span>
+<span>  treatment_of_interest <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  metrics <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"auc"</span>, <span class="st">"brier"</span>, <span class="st">"oe"</span><span class="op">)</span>,</span>
 <span>  quiet <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt;    metric   CF0   CF1</span></span>
-<span><span class="co">#&gt; 1   Brier 0.197 0.211</span></span>
-<span><span class="co">#&gt; 2     auc 0.753 0.726</span></span>
-<span><span class="co">#&gt; 3 OEratio 1.003 0.990</span></span></code></pre></div>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt;       model   auc brier    oe</span></span>
+<span><span class="co">#&gt;  null.model 0.500 0.244 1.000</span></span>
+<span><span class="co">#&gt;     model.1 0.741 0.201 0.994</span></span></code></pre></div>
 <p>And we can also give it user-specified weights, instead of a propensity formula.</p>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">prop_model</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/glm.html" class="external-link">glm</a></span><span class="op">(</span><span class="va">A</span> <span class="op">~</span> <span class="va">L</span>, family <span class="op">=</span> <span class="st">"binomial"</span>, data <span class="op">=</span> <span class="va">df_val</span><span class="op">)</span></span>
 <span><span class="va">prop_score</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">prop_model</span>, type <span class="op">=</span> <span class="st">"response"</span><span class="op">)</span></span>
 <span><span class="va">prob_trt</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/ifelse.html" class="external-link">ifelse</a></span><span class="op">(</span><span class="va">df_val</span><span class="op">$</span><span class="va">A</span> <span class="op">==</span> <span class="fl">1</span>, <span class="va">prop_score</span>, <span class="fl">1</span> <span class="op">-</span> <span class="va">prop_score</span><span class="op">)</span></span>
 <span><span class="va">my_ip_weights</span> <span class="op">&lt;-</span> <span class="fl">1</span> <span class="op">/</span> <span class="va">prob_trt</span></span>
-<span>  </span>
+<span></span>
 <span><span class="fu"><a href="reference/CFscore.html">CFscore</a></span><span class="op">(</span></span>
-<span>  data <span class="op">=</span> <span class="va">df_val</span>,</span>
-<span>  predictions <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="va">cf0</span>, <span class="va">cf1</span><span class="op">)</span>,</span>
-<span>  Y <span class="op">=</span> <span class="st">"Y"</span>,</span>
-<span>  ip <span class="op">=</span> <span class="va">my_ip_weights</span>,</span>
-<span>  A <span class="op">=</span> <span class="st">"A"</span>, <span class="co">#need to specify treatment var, which is normally inferred from propensity formula</span></span>
-<span>  treatments <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fl">0</span>,<span class="fl">1</span><span class="op">)</span>,</span>
+<span>  validation_data <span class="op">=</span> <span class="va">df_val</span>,</span>
+<span>  predictions <span class="op">=</span> <span class="va">cf0</span>,</span>
+<span>  outcome_column <span class="op">=</span> <span class="st">"Y"</span>, </span>
+<span>  ipweights <span class="op">=</span> <span class="va">my_ip_weights</span>,</span>
+<span>  treatment_column <span class="op">=</span> <span class="st">"A"</span>, <span class="co">#need to specify treatment var, which is normally inferred from propensity formula</span></span>
+<span>  treatment_of_interest <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  metrics <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"auc"</span>, <span class="st">"brier"</span>, <span class="st">"oe"</span><span class="op">)</span>,</span>
 <span>  quiet <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt;    metric   CF0   CF1</span></span>
-<span><span class="co">#&gt; 1   Brier 0.197 0.211</span></span>
-<span><span class="co">#&gt; 2     auc 0.753 0.726</span></span>
-<span><span class="co">#&gt; 3 OEratio 1.003 0.990</span></span></code></pre></div>
-<p>We can also assess performance measures on the observed data with the realized treatment values:</p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">predictions_naive</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict</a></span><span class="op">(</span><span class="va">naive_model</span>, type <span class="op">=</span> <span class="st">"response"</span>, newdata <span class="op">=</span> <span class="va">df_val</span><span class="op">)</span></span>
-<span><span class="fu"><a href="reference/observed_score.html">observed_score</a></span><span class="op">(</span>predictions <span class="op">=</span> <span class="va">predictions_naive</span>, Y <span class="op">=</span> <span class="va">df_val</span><span class="op">$</span><span class="va">Y</span><span class="op">)</span></span>
-<span><span class="co">#&gt;    metric  observed</span></span>
-<span><span class="co">#&gt; 1   Brier 0.7467057</span></span>
-<span><span class="co">#&gt; 2     auc 0.2034472</span></span>
-<span><span class="co">#&gt; 3 OEratio 0.9976336</span></span></code></pre></div>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt;       model   auc brier    oe</span></span>
+<span><span class="co">#&gt;  null.model 0.500 0.244 1.000</span></span>
+<span><span class="co">#&gt;     model.1 0.741 0.201 0.994</span></span></code></pre></div>
 </div>
 </div>
   </main><aside class="col-md-3"><div class="license">
