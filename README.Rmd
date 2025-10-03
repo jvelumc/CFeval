@@ -13,12 +13,7 @@ set.seed(123)
 ```
 # CFeval <!-- badges: start --> <!-- badges: end -->
 
-Predictions under interventions are estimates of what a subject's risk would be
-if they were to follow a certain counterfactual treatment. Assessing predictive
-performance for these predictions is challenging, as only the outcome of the
-realized treatment can be observed.(Keogh, van Geloven, DOI
-10.1097/EDE.0000000000001713). This R package facilitates assessing
-counterfactual performance of interventional predictions.
+Prediction under interventions considers estimating what a subject’s risk would be if they were to receive a certain treatment. Likewise one may be interested in assessing predictive performance in a setting where all individuals were to receive a certain treatment. This is challenging, as only the outcome of the realized treatment level can be observed in the data, and outcomes under any treatment level are counterfactual.(Keogh, van Geloven, DOI 10.1097/EDE.0000000000001713). This R package facilitates assessing counterfactual predictive performance.
 
 ## Installation 
 You can install the development version of CFeval from [GitHub](https://github.com/) with:
@@ -28,18 +23,30 @@ devtools::install_github("jvelumc/CFeval")
 ```
 ## Toy example
 
-Simulate some example data for binary outcome Y and (point) treatment A,
-confounded by a variable L. Variable P is a prognostic variable for only the
-outcome. The treatment reduces the risk on a bad outcome (Y = 1) in this simulated 
-example. The R package contains a 5000 row df_dev and a 4000 row df_val, both 
-simulated as described. 
+Simulate example data for binary outcome Y and (point) treatment A, with the relation between A and Y confounded by a variable L. Variable P is a prognostic variable for only the outcome. The treatment reduces the risk on a bad outcome (Y = 1) in this simulated example. The R package contains a 5000 row df_dev and a 4000 row df_val, both simulated as described.
 
 ![Figure 1. DAG for toy example](man/figures/dag.png)
 
 ```{r example}
 library(CFeval)
+
+simulate_data <- function(n) {
+  df <- data.frame(id = 1:n)
+  df$L <- rnorm(n)
+  df$A <- rbinom(n, 1, plogis(df$L))
+  df$P <- rnorm(n)
+  df$Y <- rbinom(n, 1, plogis(0.5 + df$L + 1.25 * df$P - 0.6*df$A))
+  return(df)
+}
+
+set.seed(123)
+df_dev <- simulate_data(5000)
+df_val <- simulate_data(4000)
+
 head(df_dev)
 ```
+
+We will use df_dev for model development. The independent df_val will be used to validate the model performance.
 
 Fitting a logistic regression model on this data without accounting for the
 confounder L results in a model where treatment apparently increases the risk
@@ -55,59 +62,54 @@ model where treatment decreases the risk on the outcome, which we know to be
 true in our simulated data
 
 ```{r}
+
+propensity_model <- glm(A ~ L, family = "binomial", df_dev)
+prop_score <- predict(propensity_model, type = "response")
+prob_trt <- ifelse(df_dev$A == 1, prop_score, 1 - prop_score)
+ipw <- 1 / prob_trt
+
 causal_model <- glm(Y ~ A + P, family = "binomial", data = df_dev, 
-                    weights = ip_weights(df_dev, A ~ L))
+                    weights = ipw)
 summary(causal_model)
 ```
 
-If either model is to be used to decide on treatment options A, we need accurate
-estimates of the counterfactual risk on outcome under both treatment options A =
-1 and A = 0. 
+From now on we assume some model has been developed (be it a good or a bad one), and we want to know if it provides accurate estimates of the counterfactual risk on outcome under both treatment options a = 1 and a = 0.
 
-Validating a model capable of estimating counterfactual risks is challenging. 
-This package aims to guide the user in assessing how well the predictions would 
-match the validation data if all individuals had followed the treatment under 
-which predictions are made. 
 
-The main function CFscore() estimates these counterfactual performance measures 
-in a validation dataset, printing all assumptions required along the way.
+This package aims to help the user in assessing how well the predictions would match the validation data if all individuals in the validation data had followed a certain treatment option of interest.
+
+
+The main function CFscore() estimates several counterfactual performance measures in a validation dataset, printing the assumptions required along the way.
 
 
 ```{r}
-results_causal <- CFscore(
-  data = df_val,
-  model = causal_model, 
-  Y = "Y", 
+results_CF0 <- CFscore(
+  validation_data = df_val,
+  model = list("naive model" = naive_model, "causal model" = causal_model), 
+  outcome_column = "Y", 
   propensity_formula = A ~ L, 
-  treatments = list(0, 1)
+  treatment_of_interest = 0
 )
-results_causal
+results_CF0
 ```
 Weights are exported:
 ```{r}
-summary(results_causal$weights)
+summary(results_CF0$ipweights)
 ```
 
-And calibration plots:
-```{r}
-plot(results_causal)
-```
 
-Compare that to the counterfactual performance of the naive model:
+See also the counterfactual score under treatment option 1
+
 ```{r}
-results_naive <- CFscore(
-  data = df_val,
-  model = naive_model,
-  Y = "Y",
-  propensity_formula = A ~ L,
-  treatments = list(0,1),
+results_CF1 <- CFscore(
+  validation_data = df_val,
+  model = list("naive model" = naive_model, "causal model" = causal_model), 
+  outcome_column = "Y", 
+  propensity_formula = A ~ L, 
+  treatment_of_interest = 0,
   quiet = TRUE
 )
-results_naive
-```
-
-```{r}
-plot(results_naive)
+results_CF1
 ```
 
 ## Other options
@@ -115,54 +117,33 @@ plot(results_naive)
 Bootstrapping for 95% confidence intervals (95CI) - in this setting (sample size 4000, binary outcome and treatment, 1 confounder) takes about 30 seconds on my pc with 200 bootstrap iterations. Here we use 50 bootstraps to save time. 
 ```{r}
 CFscore(
-  data = df_val,
-  model = causal_model, 
-  Y = "Y", 
+  validation_data = df_val,
+  model = list("naive model" = naive_model, "causal model" = causal_model), 
+  outcome_column = "Y", 
   propensity_formula = A ~ L, 
-  treatments = list(0, 1),
-  bootstrap = 50,
+  treatment_of_interest = 0,
+  metrics = c("auc", "brier", "oe"),
+  bootstrap = TRUE,
+  bootstrap_iterations = 50,
   quiet = TRUE
 )
 ```
 
-Maybe we are only interested in counterfactual performance under level 1
-```{r}
-CFscore(
-  data = df_val,
-  model = causal_model, 
-  Y = "Y", 
-  propensity_formula = A ~ L, 
-  treatments = 1,
-  quiet = TRUE
-)
-```
-
-Maybe we have a model for each treatment level
-```{r}
-df_dev$ip <- ip_weights(df_dev, A ~ L)
-model0 <- glm(Y ~ P, family = "binomial", data = df_dev[df_dev$A == 0, ], weights = ip)
-model1 <- glm(Y ~ P, family = "binomial", data = df_dev[df_dev$A == 1, ], weights = ip)
-
-CFscore(
-  data = df_val,
-  model = list(model0, model1),
-  Y = "Y",
-  propensity_formula = A ~ L,
-  treatments = list(0,1),
-  quiet = TRUE
-)
-```
 We can also give counterfactual predictions to CFscore, instead of models
 ```{r}
-cf0 <- predict(model0, newdata = df_val, type = "response")
-cf1 <- predict(model1, newdata = df_val, type = "response")
+
+# this is a bit stupid example, defining df_valA0 and then using df_val in CFscore. Makes more sense when you have complicated prediction, such as for time dependent confounding. Don't pay too much attention to this right now.
+df_valA0 <- df_val
+df_valA0$A <- 0
+cf0 <- predict(causal_model, newdata = df_valA0, type = "response")
 
 CFscore(
-  data = df_val,
-  predictions = list(cf0, cf1),
-  Y = "Y",
-  propensity_formula = A ~ L,
-  treatments = list(0,1),
+  validation_data = df_val,
+  predictions = cf0,
+  outcome_column = "Y", 
+  propensity_formula = A ~ L, 
+  treatment_of_interest = 0,
+  metrics = c("auc", "brier", "oe"),
   quiet = TRUE
 )
 ```
@@ -173,20 +154,17 @@ prop_model <- glm(A ~ L, family = "binomial", data = df_val)
 prop_score <- predict(prop_model, type = "response")
 prob_trt <- ifelse(df_val$A == 1, prop_score, 1 - prop_score)
 my_ip_weights <- 1 / prob_trt
-  
+
 CFscore(
-  data = df_val,
-  predictions = list(cf0, cf1),
-  Y = "Y",
-  ip = my_ip_weights,
-  A = "A", #need to specify treatment var, which is normally inferred from propensity formula
-  treatments = list(0,1),
+  validation_data = df_val,
+  predictions = cf0,
+  outcome_column = "Y", 
+  ipweights = my_ip_weights,
+  treatment_column = "A", #need to specify treatment var, which is normally inferred from propensity formula
+  treatment_of_interest = 0,
+  metrics = c("auc", "brier", "oe"),
   quiet = TRUE
 )
+
 ```
 
-We can also assess performance measures on the observed data with the realized treatment values:
-```{r}
-predictions_naive <- predict(naive_model, type = "response", newdata = df_val)
-observed_score(predictions = predictions_naive, Y = df_val$Y)
-```

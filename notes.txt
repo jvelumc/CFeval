@@ -7,3 +7,11 @@ How is the null model bootstrapped?
 ---
 What does a bootstrapped calibration plot look like?
 ---
+Do we want to provide function for observed score too? And how to frame?
+recommended?
+---
+
+
+
+To do:
+stabilization = T/F

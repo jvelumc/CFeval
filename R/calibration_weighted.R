@@ -47,8 +47,8 @@ calibration_plot_weighted <- function(outcomes, predictions, treatments,
     generate_calibration_plot(
       mean_preds = mean_preds,
       mean_obs = mean_obs,
-      title = paste0("Had everyone followed treatment ", x$treatment_column,
-                     " = ", treatment_of_interest),
+      title = paste0("Had everyone followed treatment option ",
+                     treatment_of_interest),
       xlab = "Observed risk",
       ylab = "Estimated risk")
   }

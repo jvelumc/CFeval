@@ -2,81 +2,99 @@
 % Please edit documentation in R/CFscore.R
 \name{CFscore}
 \alias{CFscore}
-\title{Assess counterfactual performance of a model capable of predictions under
-interventions}
+\title{Main CFscore function}
 \usage{
 CFscore(
-  data,
+  validation_data,
   model,
   predictions,
-  Y,
+  outcome_column,
   propensity_formula,
-  ip,
-  A,
-  treatments,
-  bootstrap,
-  plot = TRUE,
+  ipweights,
+  treatment_column,
+  treatment_of_interest,
+  metrics = c("auc", "brier", "oe", "oeplot"),
+  null.model = TRUE,
+  bootstrap = FALSE,
+  bootstrap_iterations = 200,
   quiet = FALSE
 )
 }
 \arguments{
-\item{data}{A data.frame on which the model is to be validated.}
+\item{validation_data}{A data.frame on which the model is to be validated.}
 
-\item{model}{A glm (lm?) which can make predictions under interventions which
-has treatment as a predictor, or a list of glm's for each specified
-treatment in the treatments variable. Either model or predictions must be
-given.}
+\item{model}{A glm (lm?) to be validated, or a list of glm's to be validated.}
 
-\item{predictions}{A numeric vector of predictions under intervention, or a
-list of numeric vectors of predictions under different interventions as
-specified by treatments variable. Either model or predictions must be
-given.}
+\item{predictions}{A numeric vector of predictions, or a list of numeric
+vectors of predictions. Either model or predictions must be given, not
+both.}
 
-\item{Y}{A character string indicating the name of the observed outcome
-column in data, or a numeric vector of the observed outcomes.}
+\item{outcome_column}{A character string indicating the name of the observed
+outcome column in data, or a numeric vector of the observed outcomes.}
 
 \item{propensity_formula}{A formula used to estimate the inverse-probability
 weights for the validation data. Treatment variable should be on the left
 hand side, all confounders on the right hand side. It is possible that
 there is a different set of confounders in the validation dataset compared
-to the model-development dataset. Either this or ipw must be given}
+to the model-development dataset. Either this or ipweights must be given}
 
-\item{ip}{The inverse probabilty weights for the validation data. Can be
+\item{ipweights}{The inverse probabilty weights for the validation data. Can be
 either string indicating the name of the ip column in the validation data,
 or a numeric vector of ip-weights.}
 
-\item{A}{A character string indicating the name of the realized treatment
+\item{treatment_column}{A character string indicating the name of the realized treatment
 column in data. Must be given if ipw's are specified. It is automatically
 inferred from propensity_formula if given.}
 
-\item{treatments}{A treatment level or a list of all treatment levels for
-which the counterfactual perormance measures should be evaluated.}
+\item{treatment_of_interest}{A treatment level  for which the counterfactual perormance measures should be evaluated.}
 
-\item{bootstrap}{If a 95% CI around performance estimates estimated by
-bootstrappingis desired, this can be achieved by setting this variable to a
-integer indicating the amount of iterations. Argument propensity_formula
-must then be given.}
+\item{metrics}{The metrics to be computed, options are c("auc", "brier",
+"oe", "oeplot")}
 
-\item{plot}{If set to TRUE, generate calibration plot}
+\item{null.model}{If TRUE, fit a null model on the counterfactual validation data}
+
+\item{bootstrap}{If TRUE, a 95% CI around performance metrics is estimated by
+bootstrapping}
+
+\item{bootstrap_iterations}{the number of bootstrap iterations}
 
 \item{quiet}{If set to TRUE, don't print assumptions}
 }
 \value{
-A list of performance measures (Brier, Observed/Expected, AUC) of
-  the model on counterfactual data, where each subject is assigned to the
-  treatments as given.
+A list with Performance metrics
 }
 \description{
-Assess counterfactual performance of a model capable of predictions under
-interventions
+Main CFscore function
 }
 \examples{
-causal_model <- glm(
-  Y ~ A + P,
-  family = "binomial",
-  data = df_dev,
-  weights = ip_weights(df_dev, A ~ L)
+simulate_data <- function(n) {
+  df <- data.frame(id = 1:n)
+  df$L <- rnorm(n)
+  df$A <- rbinom(n, 1, plogis(df$L))
+  df$P <- rnorm(n)
+  df$Y <- rbinom(n, 1, plogis(0.5 + df$L + 1.25 * df$P - 0.6*df$A))
+  return(df)
+}
+
+set.seed(123)
+df_dev <- simulate_data(5000)
+df_val <- simulate_data(4000)
+
+naive_model <- glm(Y ~ A + P, family = "binomial", data = df_dev)
+
+propensity_model <- glm(A ~ L, family = "binomial", df_dev)
+prop_score <- predict(propensity_model, type = "response")
+prob_trt <- ifelse(df_dev$A == 1, prop_score, 1 - prop_score)
+ipw <- 1 / prob_trt
+
+causal_model <- glm(Y ~ A + P, family = "binomial", data = df_dev,
+                   weights = ipw)
+
+CFscore(
+  validation_data = df_val,
+  model = list("naive model" = naive_model, "causal model" = causal_model),
+  outcome_column = "Y",
+  propensity_formula = A ~ L,
+  treatment_of_interest = 0
 )
-CFscore(data = df_val, model = causal_model, Y = "Y",
-        propensity_formula = A ~ L, treatments = list(0,1))
 }

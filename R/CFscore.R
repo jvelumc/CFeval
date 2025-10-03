@@ -91,6 +91,69 @@ make_list_if_not_list <- function(x) {
 
 
 
+#' Main CFscore function
+#'
+#' @param validation_data A data.frame on which the model is to be validated.
+#' @param model A glm (lm?) to be validated, or a list of glm's to be validated.
+#' @param predictions  A numeric vector of predictions, or a list of numeric
+#'   vectors of predictions. Either model or predictions must be given, not
+#'   both.
+#' @param outcome_column A character string indicating the name of the observed
+#'   outcome column in data, or a numeric vector of the observed outcomes.
+#' @param propensity_formula A formula used to estimate the inverse-probability
+#'   weights for the validation data. Treatment variable should be on the left
+#'   hand side, all confounders on the right hand side. It is possible that
+#'   there is a different set of confounders in the validation dataset compared
+#'   to the model-development dataset. Either this or ipweights must be given
+#' @param ipweights The inverse probabilty weights for the validation data. Can be
+#'   either string indicating the name of the ip column in the validation data,
+#'   or a numeric vector of ip-weights.
+#' @param treatment_column A character string indicating the name of the realized treatment
+#'   column in data. Must be given if ipw's are specified. It is automatically
+#'   inferred from propensity_formula if given.
+#' @param treatment_of_interest A treatment level  for which the counterfactual perormance measures should be evaluated.
+#' @param metrics The metrics to be computed, options are c("auc", "brier",
+#' "oe", "oeplot")
+#' @param null.model If TRUE, fit a null model on the counterfactual validation data
+#' @param bootstrap If TRUE, a 95% CI around performance metrics is estimated by
+#'   bootstrapping
+#' @param bootstrap_iterations the number of bootstrap iterations
+#' @param quiet If set to TRUE, don't print assumptions
+#'
+#' @returns A list with Performance metrics
+#' @export
+#'
+#' @examples
+#' simulate_data <- function(n) {
+#'   df <- data.frame(id = 1:n)
+#'   df$L <- rnorm(n)
+#'   df$A <- rbinom(n, 1, plogis(df$L))
+#'   df$P <- rnorm(n)
+#'   df$Y <- rbinom(n, 1, plogis(0.5 + df$L + 1.25 * df$P - 0.6*df$A))
+#'   return(df)
+#' }
+#'
+#' set.seed(123)
+#' df_dev <- simulate_data(5000)
+#' df_val <- simulate_data(4000)
+#'
+#' naive_model <- glm(Y ~ A + P, family = "binomial", data = df_dev)
+#'
+#' propensity_model <- glm(A ~ L, family = "binomial", df_dev)
+#' prop_score <- predict(propensity_model, type = "response")
+#' prob_trt <- ifelse(df_dev$A == 1, prop_score, 1 - prop_score)
+#' ipw <- 1 / prob_trt
+#'
+#' causal_model <- glm(Y ~ A + P, family = "binomial", data = df_dev,
+#'                    weights = ipw)
+#'
+#' CFscore(
+#'   validation_data = df_val,
+#'   model = list("naive model" = naive_model, "causal model" = causal_model),
+#'   outcome_column = "Y",
+#'   propensity_formula = A ~ L,
+#'   treatment_of_interest = 0
+#' )
 CFscore <- function(validation_data, model, predictions, outcome_column,
                     propensity_formula, ipweights,
                     treatment_column, treatment_of_interest,

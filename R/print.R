@@ -58,6 +58,7 @@ plot.cfscore <- function(x, ...) {
     models <- arg$models
   }
   for (m in models) {
+    cat("model: ", m, "\n")
     x$results$oeplot[[m]]()
   }
 }
