@@ -26,28 +26,7 @@ cfs <- CFscore(df_val, list("naive" = naive_model, "causal" = causal_model),
         outcome_column = "Y", propensity_formula = A ~ L,
         treatment_of_interest = 1, bootstrap = TRUE, bootstrap_iterations = 10)
 
-metrics <- c("auc", "brier")
 
 
-
-
-get_bootstrapped_metric(cfs$b, 4, "brier")
-
-cfs$b[[1]][[1]][[metrics[[2]]]]
-
-
-
-
-unlist(cfs$results[[1]]) |> str()
-
-split(unlist(a$b), f = "auc")
-
-split(
-  unlist(cfs$results, use.names = T),
-  f = c("brier", "auc", "oe", "oeplot")
-) |> str()
-
-b <- quote(causal_model)
-
-
-
+cfs$results$auc
+cfs$b$auc
