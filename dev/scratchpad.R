@@ -12,7 +12,7 @@ naive_model <- lm(Y ~ A + P, data = df_dev)
 class(naive_model)
 
 
-cfs <- CFscore(df_val, list("naive" = naive_model, causal_model),
+cfs2 <- CFscore(df_val, list("naive" = naive_model, causal_model),
         outcome_column = "Y", propensity_formula = A ~ L,
         treatment_of_interest = 0)
 

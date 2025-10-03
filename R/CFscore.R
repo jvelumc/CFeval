@@ -183,13 +183,15 @@ CFscore <- function(validation_data, model, predictions, outcome_column,
       metrics = metrics,
       iterations = bootstrap_iterations
     )
-    cfscore$b <- b
+    cfscore$results_bootstrap <- b
   }
 
   cfscore$models <- names(predictions)
   cfscore$metrics <- metrics
   cfscore$ipweights <- ipweights
   cfscore$treatment_column <- treatment_column
+  cfscore$treatment_of_interest <- treatment_of_interest
+  cfscore$bootstrap <- bootstrap
   if (!missing(propensity_formula)) {
     cfscore$propensity <- propensity_formula
     cfscore$confounders <- all.vars(propensity_formula)[-1]

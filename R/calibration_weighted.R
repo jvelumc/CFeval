@@ -1,6 +1,6 @@
-generate_calibration_plot <- function(mean_preds, mean_obs, title, ylab) {
+generate_calibration_plot <- function(mean_preds, mean_obs, title, xlab, ylab) {
   plot(mean_preds, mean_obs, type = "o", xlim = c(0,1), ylim = c(0,1),
-       xlab = "Predicted risk", ylab = ylab,
+       xlab = xlab, ylab = ylab,
        main = title)
   graphics::abline(0, 1, col = "red")
 }
@@ -47,9 +47,10 @@ calibration_plot_weighted <- function(outcomes, predictions, treatments,
     generate_calibration_plot(
       mean_preds = mean_preds,
       mean_obs = mean_obs,
-      title = paste0("Calibration plot had everyone followed treatment ",
-                     treatment_of_interest),
-      ylab = "Counterfactual observed risk")
+      title = paste0("Had everyone followed treatment ", x$treatment_column,
+                     " = ", treatment_of_interest),
+      xlab = "Observed risk",
+      ylab = "Estimated risk")
   }
   return(calplot)
 }
