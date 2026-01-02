@@ -105,20 +105,28 @@ test_that("Binary outcome/point trt analytically correct", {
     score$AUC$score$AUC
   )
 
-
-
-
-
   # expect_equal(
-  #   cf_auc(
+  #   cf_oeratio(
   #     obs_outcome = df_toy$Y,
   #     obs_trt = df_toy$A,
   #     cf_pred = df_toy$pred,
   #     cf_trt = 0,
   #     ipw = df_toy$ipw
   #   ),
-
+  #   mean(df_pseudo_exact$Y)/mean(df_pseudo_exact$pred)
   # )
+
+  expect_equal(
+    cf_oeratio_e_from_pp(
+      obs_outcome = df_toy$Y,
+      obs_trt = df_toy$A,
+      cf_pred = df_toy$pred,
+      cf_trt = 0,
+      ipw = df_toy$ipw
+    ),
+    mean(df_pseudo_exact$Y)/mean(df_pseudo_exact$pred)
+  )
+
 })
 
 

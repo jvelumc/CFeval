@@ -12,7 +12,6 @@ cf_brier <- function(obs_outcome, obs_trt, cf_pred, cf_trt, ipw) {
     )
 }
 
-
 # AUC
 
 cf_auc <- function(obs_outcome, obs_trt, cf_pred, cf_trt, ipw) {
@@ -65,5 +64,38 @@ cf_auc <- function(obs_outcome, obs_trt, cf_pred, cf_trt, ipw) {
   return(numerator / denominator)
 }
 
+# calibration
 
-# OE
+# # oe ratio
+cf_oeratio <- function(obs_outcome, obs_trt, cf_pred, cf_trt, ipw) {
+
+  # indices of persons that follow the trt of interest
+  pseudo_i <- obs_trt == cf_trt
+
+  observed <- stats::weighted.mean(
+    x = obs_outcome[pseudo_i],
+    w = ipw[pseudo_i]
+  )
+
+  expected <- mean(cf_pred)
+
+  return(observed/expected)
+}
+
+cf_oeratio_e_from_pp <- function(obs_outcome, obs_trt, cf_pred, cf_trt, ipw) {
+
+  # indices of persons that follow the trt of interest
+  pseudo_i <- obs_trt == cf_trt
+
+  observed <- stats::weighted.mean(
+    x = obs_outcome[pseudo_i],
+    w = ipw[pseudo_i]
+  )
+
+  expected <- stats::weighted.mean(
+    x = cf_pred[pseudo_i],
+    w = ipw[pseudo_i]
+  )
+
+  return(observed/expected)
+}
