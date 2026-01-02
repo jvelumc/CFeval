@@ -76,22 +76,49 @@ test_that("Binary outcome/point trt analytically correct", {
                data = df_toy, weights = ipw)
   )
   # predict CF outcomed under trt 0
-  df_toy$P0 <- predict_CF(model, df_toy, "A", 0)
-  df_pseudo_exact$P0 <- predict_CF(model, df_pseudo_exact, "A", 0)
+  df_toy$pred <- predict_CF(model, df_toy, "A", 0)
+  df_pseudo_exact$pred <- predict_CF(model, df_pseudo_exact, "A", 0)
+
+  score <- riskRegression::Score(list(df_pseudo_exact$pred), Y ~ 1,
+                                 data = df_pseudo_exact,
+                                 null.model = F, se.fit = F)
 
   expect_equal(
     cf_brier(
-      real_outc = df_toy$Y,
-      real_trt = df_toy$A,
-      cf_pred = df_toy$P0,
+      obs_outcome = df_toy$Y,
+      obs_trt = df_toy$A,
+      cf_pred = df_toy$pred,
       cf_trt = 0,
       ipw = df_toy$ipw
     ),
-    DescTools::BrierScore(
-      df_pseudo_exact$Y0,
-      df_pseudo_exact$P0
-    )
+    score$Brier$score$Brier
   )
+
+  expect_equal(
+    cf_auc(
+      obs_outcome = df_toy$Y,
+      obs_trt = df_toy$A,
+      cf_pred = df_toy$pred,
+      cf_trt = 0,
+      ipw = df_toy$ipw
+    ),
+    score$AUC$score$AUC
+  )
+
+
+
+
+
+  # expect_equal(
+  #   cf_auc(
+  #     obs_outcome = df_toy$Y,
+  #     obs_trt = df_toy$A,
+  #     cf_pred = df_toy$pred,
+  #     cf_trt = 0,
+  #     ipw = df_toy$ipw
+  #   ),
+
+  # )
 })
 
 
