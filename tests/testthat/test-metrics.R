@@ -17,6 +17,9 @@ test_that("Binary outcome/point trt analytically correct", {
 
   df_toy <- build_data(500)
 
+  # artificially add some ties
+  df_toy <- rbind(df_toy, df_toy[1:50,])
+
   df_toy$ipw <- ip_weights(df_toy, A ~ L)
 
   is_whole <- function(x, tol = .Machine$double.eps^0.5) {
@@ -27,12 +30,12 @@ test_that("Binary outcome/point trt analytically correct", {
   smallest_a_st_xa_int <- function(x) {
     smallest_a_st_xa_int2 <- function(x) {
 
-      for (a in 1:100) {
+      for (a in 1:10000) {
         if (is_whole(x*a)) {
           return(a)
         }
       }
-      stop("No smallest a <= 100 found")
+      stop("No smallest a <= 10000 found")
     }
     sapply(x, smallest_a_st_xa_int2)
   }
