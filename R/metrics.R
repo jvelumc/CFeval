@@ -20,9 +20,7 @@ cf_auc <- function(obs_outcome, obs_trt, cf_pred, cf_trt, ipw) {
   pseudo_i <- obs_trt == cf_trt
 
   obs_outcome <- obs_outcome[pseudo_i]
-  obs_trt <- obs_trt[pseudo_i]
   cf_pred <- cf_pred[pseudo_i]
-  cf_trt <- cf_trt[pseudo_i]
   ipw <- ipw[pseudo_i]
 
   stopifnot(
@@ -31,37 +29,23 @@ cf_auc <- function(obs_outcome, obs_trt, cf_pred, cf_trt, ipw) {
     "nonbinary outcome" = length(unique(obs_outcome)) == 2
   )
 
-  cases_indices <- which(obs_outcome == 1)
-  controls_indices <- which(obs_outcome == 0)
+  o <- order(cf_pred)
+  obs_outcome <- obs_outcome[o]
+  ipw <- ipw[o]
 
-  cases_predictions <- cf_pred[cases_indices]
-  controls_predictions <- cf_pred[controls_indices]
+  # weighted ranks
+  cum_ipw <- cumsum(ipw)
+  rank_ipw <- cum_ipw - 0.5 * ipw
 
-  cases_weights <- ipw[cases_indices]
-  controls_weights <- ipw[controls_indices]
+  W1 <- sum(ipw[obs_outcome == 1])
+  W0 <- sum(ipw[obs_outcome == 0])
 
-  numerator <- 0
-  denominator <- 0
+  auc <- (
+    sum(ipw[obs_outcome == 1] * rank_ipw[obs_outcome == 1]) -
+      0.5 * W1^2
+  ) / (W1 * W0)
 
-  for (i in cases_indices) {
-
-    cf_pred_i <- cf_pred[i]
-    ipw_i <- ipw[i]
-
-    n_wins <- sum(
-      ipw_i * controls_weights[cf_pred_i > controls_predictions]
-    )
-
-    n_ties <- sum(
-      ipw_i * controls_weights[cf_pred_i == controls_predictions]
-    )
-
-    numerator <- numerator + n_wins + 0.5 * n_ties
-
-    denominator <- denominator + sum(ipw_i * controls_weights)
-
-  }
-  return(numerator / denominator)
+  auc
 }
 
 # calibration
