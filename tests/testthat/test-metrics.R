@@ -249,7 +249,7 @@ test_that(
   })
 
 test_that(
-  "binary outcome/point trt trivial settings correct",
+  "binary outcome/point trt trivial auc correct",
   {
     expect_equal(
       cf_auc(
@@ -261,25 +261,76 @@ test_that(
       ),
       0.5
     )
-    # riskRegression::Score(
-    #   list(c(0.5,0.5,0.5,0.5)),
-    #   formula = Y ~ 1,
-    #   data = data.frame(Y = c(0,0,1,1))
-    # )$auc
-    #
-    # expect_equal(auc_weighted(c(1,1,0, 0), c(1,1,1,1), c(1,1,1,1)), 0.5)
-    # expect_equal(auc_weighted(c(1,1,0, 0), c(.9,.8,.7,.6), c(1,1,1,1)), 1)
-    # expect_equal(auc_weighted(c(1,1,0, 0), c(0,0,1,1), c(1,1,1,1)), 0)
+
+    expect_equal(
+      cf_auc(
+        obs_outcome = c(0,0,1,1),
+        obs_trt = c(1,1,1,1),
+        cf_pred = c(1,0,1,0),
+        cf_trt = 1,
+        ipw = c(1,1,1,1)
+      ),
+      0.5
+    )
+    expect_equal(
+      cf_auc(
+        obs_outcome = c(0,0,1,1),
+        obs_trt = c(1,1,1,1),
+        cf_pred = c(0.1,0.2,0.3,0.4),
+        cf_trt = 1,
+        ipw = c(1,1,1,1)
+      ),
+      1
+    )
+    expect_equal(
+      cf_auc(
+        obs_outcome = c(0,0,1,1),
+        obs_trt = c(1,1,1,1),
+        cf_pred = c(1,1,0,0),
+        cf_trt = 1,
+        ipw = c(1,1,1,1)
+      ),
+      0
+    )
+
+    # todo: expect errors for missing outcomes in trt groups etc.
   }
 )
 
 test_that(
-  "binary outcome/point trt better model is better"
+  "binary outcome/point trt trivial oe correct",
   {
-    # todo
-  }
-)
-
-test_that("oops", {
-          expect_equal(0, 0.00001)
+    expect_equal(
+      cf_oeratio(
+        obs_outcome = c(0,1,0,1),
+        obs_trt = c(1,1,1,1),
+        cf_pred = c(0.5,0.5,0.5,0.5),
+        cf_trt = 1,
+        ipw = c(1,1,1,1)
+      ),
+      1
+    )
+    expect_equal(
+      cf_oeratio(
+        obs_outcome = c(0,0,0,0),
+        obs_trt = c(1,1,1,1),
+        cf_pred = c(0.5,0.5,0.5,0.5),
+        cf_trt = 1,
+        ipw = c(1,1,1,1)
+      ),
+      0
+    )
+    expect_equal(
+      cf_oeratio(
+        obs_outcome = c(1,0,0,0),
+        obs_trt = c(1,1,1,1),
+        cf_pred = c(0,0.5,0,0),
+        cf_trt = 1,
+        ipw = c(1,1,1,1)
+      ),
+      2
+    )
   })
+
+
+
