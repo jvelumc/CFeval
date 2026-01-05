@@ -178,33 +178,35 @@ test_that(
       stats::plogis(shift + df_val$L1 + df_val$L2)
     )
 
+    pred0 <- predict_CF(model, df_val, "A", 0)
+
     # truth vs cf estimation
     truth <- list(
       auc = cf_auc(
         obs_outcome = df_val$Y0,
         obs_trt = rep(0, nrow(df_val)),
-        cf_pred = predict_CF(model, df_val, "A", 0),
+        cf_pred = pred0,
         cf_trt = 0,
         ipw = rep(1, nrow(df_val))
       ),
       brier = cf_brier(
         obs_outcome = df_val$Y0,
         obs_trt = rep(0, nrow(df_val)),
-        cf_pred = predict_CF(model, df_val, "A", 0),
+        cf_pred = pred0,
         cf_trt = 0,
         ipw = rep(1, nrow(df_val))
       ),
       oe = cf_oeratio(
         obs_outcome = df_val$Y0,
         obs_trt = rep(0, nrow(df_val)),
-        cf_pred = predict_CF(model, df_val, "A", 0),
+        cf_pred = pred0,
         cf_trt = 0,
         ipw = rep(1, nrow(df_val))
       ),
       oe_e_pp = cf_oeratio_e_from_pp(
         obs_outcome = df_val$Y0,
         obs_trt = rep(0, nrow(df_val)),
-        cf_pred = predict_CF(model, df_val, "A", 0),
+        cf_pred = pred0,
         cf_trt = 0,
         ipw = rep(1, nrow(df_val))
       ))
@@ -213,28 +215,28 @@ test_that(
       auc = cf_auc(
         obs_outcome = df_val$Y,
         obs_trt = df_val$A,
-        cf_pred = predict_CF(model, df_val, "A", 0),
+        cf_pred = pred0,
         cf_trt = 0,
         ipw = df_val$ipw
       ),
       brier = cf_brier(
         obs_outcome = df_val$Y,
         obs_trt = df_val$A,
-        cf_pred = predict_CF(model, df_val, "A", 0),
+        cf_pred = pred0,
         cf_trt = 0,
         ipw = df_val$ipw
       ),
       oe = cf_oeratio(
         obs_outcome = df_val$Y,
         obs_trt = df_val$A,
-        cf_pred = predict_CF(model, df_val, "A", 0),
+        cf_pred = pred0,
         cf_trt = 0,
         ipw = df_val$ipw
       ),
       oe_e_pp = cf_oeratio_e_from_pp(
         obs_outcome = df_val$Y,
         obs_trt = df_val$A,
-        cf_pred = predict_CF(model, df_val, "A", 0),
+        cf_pred = pred0,
         cf_trt = 0,
         ipw = df_val$ipw
       ))
@@ -251,7 +253,7 @@ test_that(
   {
     expect_equal(
       cf_auc(
-        obs_outcome = c(1,1,0,0,1,1),
+        obs_outcome = c(0,1,0,1),
         obs_trt = c(1,1,1,1),
         cf_pred = c(0.5,0.5,0.5,0.5),
         cf_trt = 1,
