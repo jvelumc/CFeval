@@ -30,22 +30,29 @@ cf_auc <- function(obs_outcome, obs_trt, cf_pred, cf_trt, ipw) {
   )
 
   o <- order(cf_pred)
-  obs_outcome <- obs_outcome[o]
-  ipw <- ipw[o]
+  s <- cf_pred[o]
+  y <- obs_outcome[o]
+  w <- ipw[o]
 
-  # weighted ranks
-  cum_ipw <- cumsum(ipw)
-  rank_ipw <- cum_ipw - 0.5 * ipw
+  # totals
+  W1 <- sum(w[y == 1])
+  W0 <- sum(w[y == 0])
 
-  W1 <- sum(ipw[obs_outcome == 1])
-  W0 <- sum(ipw[obs_outcome == 0])
+  # group by unique score values
+  split_idx <- split(seq_along(s), s)
 
-  auc <- (
-    sum(ipw[obs_outcome == 1] * rank_ipw[obs_outcome == 1]) -
-      0.5 * W1^2
-  ) / (W1 * W0)
+  cum_w0 <- 0
+  num <- 0
 
-  auc
+  for (idx in split_idx) {
+    w1_t <- sum(w[idx][y[idx] == 1])
+    w0_t <- sum(w[idx][y[idx] == 0])
+
+    num <- num + w1_t * cum_w0 + 0.5 * w1_t * w0_t
+    cum_w0 <- cum_w0 + w0_t
+  }
+
+  auc <- num / (W1 * W0)
 }
 
 # calibration

@@ -18,8 +18,13 @@ test_that(
     set.seed(1)
 
     df_toy <- build_data(100)
-    # artificially add some ties
-    df_toy <- rbind(df_toy, df_toy[1:25,])
+    # artificially add some ties with flipped outcome to make sure AUC handles
+    # ties correctly
+    df_flipped <- df_toy[1:10,]
+    df_flipped$Y0 <- 1 - df_flipped$Y0
+    df_flipped$Y1 <- 1 - df_flipped$Y1
+    df_flipped$Y <- 1 - df_flipped$Y
+    df_toy <- rbind(df_toy, df_flipped)
 
     df_toy$ipw <- ip_weights(df_toy, A ~ L)
 
@@ -164,6 +169,7 @@ test_that(
     )
 
     shift <- -1
+    n <- 1000000
     df_val <- build_data(n, shift = shift)
     # we know the ipw formula, so might as well fill that in
     df_val$ipw <- 1/ifelse(
@@ -241,9 +247,27 @@ test_that(
   })
 
 test_that(
-  "binary outcome/point trt trivial settings correct"
+  "binary outcome/point trt trivial settings correct",
   {
-    # todo
+    expect_equal(
+      cf_auc(
+        obs_outcome = c(1,1,0,0,1,1),
+        obs_trt = c(1,1,1,1),
+        cf_pred = c(0.5,0.5,0.5,0.5),
+        cf_trt = 1,
+        ipw = c(1,1,1,1)
+      ),
+      0.5
+    )
+    # riskRegression::Score(
+    #   list(c(0.5,0.5,0.5,0.5)),
+    #   formula = Y ~ 1,
+    #   data = data.frame(Y = c(0,0,1,1))
+    # )$auc
+    #
+    # expect_equal(auc_weighted(c(1,1,0, 0), c(1,1,1,1), c(1,1,1,1)), 0.5)
+    # expect_equal(auc_weighted(c(1,1,0, 0), c(.9,.8,.7,.6), c(1,1,1,1)), 1)
+    # expect_equal(auc_weighted(c(1,1,0, 0), c(0,0,1,1), c(1,1,1,1)), 0)
   }
 )
 
