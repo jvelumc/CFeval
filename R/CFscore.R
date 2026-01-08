@@ -1,10 +1,3 @@
-predict_CF <- function(model, data, A_column, CF_treatment) {
-  # predict outcome probabilities for all patients, setting their treatment
-  # to CF_treatment
-  data[[A_column]] <- CF_treatment
-  stats::predict(model, newdata = data, type = "response")
-}
-
 CFscore_undertrt <- function(data, cf, Y, A_column_name, ipw, trt,
                              metrics, sample = 1:nrow(data)) {
   lapply(
