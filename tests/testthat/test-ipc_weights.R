@@ -97,7 +97,6 @@ test_that(
                         data = df_dev, times = horizon, null.model = F)
 
 
-
     expect_equal(
       cf_brier(
         df_dev$status_at_horizon,
