@@ -1,5 +1,14 @@
 ipc_weights <- function(data, formula, type, time_horizon) {
 
+  data <- data.frame(
+    time = c(1,2,3),
+    status = c(1,0,1)
+  )
+  formula <- Surv(time + 1, status) ~ 1
+  type <- "cox"
+  time_horizon <- 2.1
+
+
   mf <- model.frame(formula, data)
   y <- model.response(mf)
 
@@ -13,7 +22,8 @@ ipc_weights <- function(data, formula, type, time_horizon) {
   } else {
     mf_flip <- mf
     mf_flip[[1]] <- y_flip
-    fit <- survival::survfit(formula, data = mf_flip)
+    # fit <- survival::survfit(formula, data = mf_flip)
+    fit <- coxph(formula, data = mf_flip)
   }
 
   p_not_censor <- stepfun(fit$time, c(1, fit$surv))
