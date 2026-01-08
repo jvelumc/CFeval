@@ -10,7 +10,7 @@ ipc_weights <- function(data, formula, type, time_horizon) {
   df_flipped$status <- 1 - df_flipped[[1]][, "status"]
   df_flipped$time <- df_flipped[[1]][, "time"]
 
-  fit <- survfit(formula, data = df_flipped)
+  fit <- survival::survfit(formula, data = df_flipped)
 
   p_not_censor <- stepfun(fit$time, c(1, fit$surv))
 

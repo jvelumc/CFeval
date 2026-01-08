@@ -19,6 +19,20 @@ predict_glm <- function(model, data) {
 
 
 predict_cox <- function(model, data, time_column, time_horizon) {
-  data[[time_column]] <- time_horizon
-  1 - predict(model, newdata = data, type = "survival")
+  # data[[time_column]] <- time_horizon
+  # 1 - predict(model, newdata = data, type = "survival")
+  # sf <- survfit(model, newdata = data)
+  # S_t <- summary(sf, times = time_horizon)$surv
+  # 1 - S_t
+
+  bh <- survival::basehaz(model, centered = FALSE)
+  H0_horizon <- bh$hazard[max(which(bh$time <= time_horizon))]
+  S0_horizon <- exp(-H0_horizon)
+
+  lp <- predict(model, newdata = data, type = "lp")
+
+  S_horizon <- S0_horizon^exp(lp)
+  1-S_horizon
 }
+
+

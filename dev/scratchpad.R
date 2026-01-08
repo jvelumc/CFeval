@@ -1,5 +1,6 @@
 library(survival)
 
+
 build_data <- function(n) {
   df <- data.frame(id = 1:n)
   df$L <- stats::rnorm(n)
@@ -23,58 +24,24 @@ build_data <- function(n) {
   df$time0 <- pmin(df$censortime, df$failuretime0)
   df$time <- pmin(df$censortime, df$failuretime)
 
-
+  df$status0 <- df$failuretime0 < df$censortime
   df$status <- df$failuretime < df$censortime
   return(df)
 }
 
-df_dev <- build_data(1000000)
-
-summary(df_dev$failuretime0)
-summary(df_dev$failuretime1)
-summary(df_dev$censortime)
-summary(df_dev$status)
+df_dev <- build_data(100000)
 
 time_horizon <- 10
-
-
-
-ipc_weights <- function(data, formula, type, time_horizon) {
-  # assert l.h.s. of formula is Surv object
-  # make sure time and status are not variables in the formula on the rhs
-
-  # type <- "KM"
-  # data <- df_dev[1:10,]
-  # formula <- Surv(time, status) ~ 1
-  # time_horizon <- 5
-
-  # flip events (we are predicting censor events)
-
-  df_flipped <- model.frame(formula, data)
-  df_flipped$status <- 1 - df_flipped[[1]][, "status"]
-  df_flipped$time <- df_flipped[[1]][, "time"]
-
-  fit <- survfit(formula, data = data)
-
-  p_not_censor <- stepfun(fit$time, c(1, fit$surv))
-
-  #pctrue <- stepfun(fit$time, c(0, 1- exp(-0.025*exp(0.1)*fit$time)))
-
-  # if censored (flipped status = 1!) before time horizon, weight is 0,
-  # else, weight is 1/probability uncensored at event/time horizon
-  ifelse(
-    df_flipped$status == 1 & df_flipped$time < time_horizon,
-    0,
-    1 / p_not_censor(pmin(df_flipped$time, time_horizon))
-  )
-}
+df_dev$status_at_horizon <- ifelse(df_dev$time > time_horizon, FALSE, df_dev$status)
+df_dev$time_at_horizon <- pmin(df_dev$time, time_horizon)
 
 df_dev$ipw <- ip_weights(df_dev, A ~ L)
 df_dev$ipc <- ipc_weights(df_dev, Surv(time, status) ~ 1, type = "KM",
                           time_horizon = time_horizon)
-#
-# coxph(Surv(time, status) ~ P + A, data = df_dev)
-# coxph(Surv(time, status) ~ P + A, data = df_dev[df_dev$ipc != 0,], weights = ipc)
+
+coxph(Surv(time_at_horizon, status_at_horizon) ~ P + A, data = df_dev)
+coxph(Surv(time_at_horizon, status_at_horizon) ~ P + A,
+      data = df_dev[df_dev$ipc != 0,], weights = ipc)
 
 model <- coxph(Surv(time, status) ~ P + A, data = df_dev, weights = ipw)
 
@@ -90,11 +57,6 @@ mpc <- function(model, time, trt) {
 }
 
 df_dev$pred0 <- mpc(model, time_horizon, 0)
-
-summary(df_dev$pred0)
-
-status_at_horizon <- ifelse(df_dev$time > time_horizon, FALSE, df_dev$status)
-time_at_horizon <- pmin(df_dev$time, time_horizon)
 
 convert_surv_to_binary <- function(survtime, status, horizon) {
   ifelse(survtime <= horizon, status, FALSE)
@@ -126,7 +88,7 @@ cf_auc(
   df_dev$ipw*df_dev$ipc
 )
 
-score <- riskRegression::Score(list(df_dev$pred0), Hist(failuretime0, status) ~ 1,
+score <- riskRegression::Score(list(df_dev$pred0), Hist(failuretime0, status0) ~ 1,
                       data = df_dev, times = 10, null.model = F)
 score$AUC$score$AUC
 score$Brier$score$Brier

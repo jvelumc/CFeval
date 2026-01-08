@@ -5,19 +5,19 @@ test_that("ipc simple correct", {
   )
 
   expect_equal(
-    ipc_weights(data, Surv(time, status) ~ 1, type = "KM", time_horizon = 0.5),
+    ipc_weights(data, survival::Surv(time, status) ~ 1, type = "KM", time_horizon = 0.5),
     c(1,1,1)
   )
   expect_equal(
-    ipc_weights(data, Surv(time, status) ~ 1, type = "KM", time_horizon = 1.5),
+    ipc_weights(data, survival::Surv(time, status) ~ 1, type = "KM", time_horizon = 1.5),
     c(1,1,1)
   )
   expect_equal(
-    ipc_weights(data, Surv(time, status) ~ 1, type = "KM", time_horizon = 2.5),
+    ipc_weights(data, survival::Surv(time, status) ~ 1, type = "KM", time_horizon = 2.5),
     c(1,0,2)
   )
   expect_equal(
-    ipc_weights(data, Surv(time, status) ~ 1, type = "KM", time_horizon = 3.5),
+    ipc_weights(data, survival::Surv(time, status) ~ 1, type = "KM", time_horizon = 3.5),
     c(1,0,2)
   )
 
@@ -27,70 +27,109 @@ test_that("ipc simple correct", {
   )
 
   expect_equal(
-    ipc_weights(data, Surv(time, status) ~ 1, type = "KM", time_horizon = 0.5),
+    ipc_weights(data, survival::Surv(time, status) ~ 1, type = "KM", time_horizon = 0.5),
     c(1,1,1)
   )
   expect_equal(
-    ipc_weights(data, Surv(time, status) ~ 1, type = "KM", time_horizon = 1.5),
+    ipc_weights(data, survival::Surv(time, status) ~ 1, type = "KM", time_horizon = 1.5),
     c(0,1.5,1.5)
   )
   expect_equal(
-    ipc_weights(data, Surv(time, status) ~ 1, type = "KM", time_horizon = 2.5),
+    ipc_weights(data, survival::Surv(time, status) ~ 1, type = "KM", time_horizon = 2.5),
     c(0,1.5,1.5)
   )
   expect_equal(
-    ipc_weights(data, Surv(time, status) ~ 1, type = "KM", time_horizon = 3.5),
+    ipc_weights(data, survival::Surv(time, status) ~ 1, type = "KM", time_horizon = 3.5),
     c(0,1.5,0)
   )
 })
 
-test_that("ipc-weighted population represents uncensored population,
-          noninformative censoring" {
-  build_data <- function(n) {
-    df <- data.frame(id = 1:n)
-    df$L1 <- stats::rnorm(n)
-    df$L2 <- stats::rbinom(n, 1, 0.5)
-    df$P1 <- stats::rnorm(n)
-    df$P2 <- stats::rbinom(n, 1, 0.5)
-
-    u <- runif(n)
-    uc <- runif(n)
-
-    lambda0 <- 0.04
-    lambdac <- 0.03
-
-    df$failuretime <-  -log(u) / (lambda0 * exp(
-      0.5*df$L1 + 0.3*df$L2 + 0.2*df$P1 + 0.4*df$P2))
-
-    # non informative censoring
-    df$censortime <- -log(uc)/ (lambdac * exp(0.1))
-
-    df$time <- pmin(df$censortime, df$failuretime)
-
-    df$status <- df$failuretime < df$censortime
+test_that(
+  "ipc-weighted population represents uncensored population,
+  noninformative censoring", {
 
     horizon <- 20
+    build_data <- function(n) {
+      df <- data.frame(id = 1:n)
+      df$L1 <- stats::rnorm(n)
+      df$L2 <- stats::rbinom(n, 1, 0.5)
+      df$P1 <- stats::rnorm(n)
+      df$P2 <- stats::rbinom(n, 1, 0.5)
+      df$A <- rep(1, n)
 
-    df$time_at_horizon <- pmin(df$time, horizon)
-    df$status_at_horizon <- ifelse(df$time < horizon, df$status, F)
-    return(df)
-  }
-  data <- build_data(10000)
-  summary(data$failuretime)
-  summary(data$censortime)
+      u <- runif(n)
+      uc <- runif(n)
 
-  ipc_weights(data, Surv(time, status) ~ 1, "KM", 20)
+      lambda0 <- 0.04
+      lambdac <- 0.03
 
-  coxph(Surv(time_at_horizon, status_at_horizon) ~ L1 + L2 + P1 + P2,
-        data = data, )
+      df$failuretime <-  -log(u) / (lambda0 * exp(
+        0.5*df$L1 + 0.3*df$L2 + 0.2*df$P1 + 0.4*df$P2))
 
-  coxph(Surv(time, status) ~ L1 + L2 + P1 + P2,
-        data = data)
+      # non informative censoring
+      df$censortime <- -log(uc)/ (lambdac * exp(0.1))
 
+      df$time <- pmin(df$censortime, df$failuretime)
 
-  coxph(Surv(failuretime, rep(1, nrow(data))) ~ L1 + L2 + P1 + P2,
-        data = data)
+      df$status <- df$failuretime < df$censortime
 
 
+      df$time_at_horizon <- pmin(df$time, horizon)
+      df$status_at_horizon <- ifelse(df$time < horizon, df$status, F)
+
+      df$status_at_horizon_uncensored <- df$failuretime < horizon
+      return(df)
+    }
+    df_dev <- build_data(500000)
+    df_dev$ipc <- ipc_weights(df_dev, survival::Surv(time, status) ~ 1, "KM", horizon)
+    model <- survival::coxph(
+      survival::Surv(time_at_horizon, status_at_horizon) ~ L1 + L2 + P1 + P2,
+                   data = df_dev[df_dev$ipc > 0, ], weights = ipc)
+    expect_equal(
+      unname(model$coefficients),
+      c(0.5, 0.3, 0.2, 0.4),
+      tolerance = 0.01
+    )
+
+    df_dev$pred <- predict_CF(model, df_dev, "A", 1, "time", horizon)
+
+    score <- riskRegression::Score(list(df_dev$pred), Hist(failuretime, A) ~ 1,
+                        data = df_dev, times = horizon, null.model = F)
+
+
+
+    expect_equal(
+      cf_brier(
+        df_dev$status_at_horizon,
+        df_dev$A,
+        df_dev$pred,
+        1,
+        df_dev$ipc
+      ),
+      score$Brier$score$Brier,
+      tolerance = 0.01
+    )
+    expect_equal(
+      cf_auc(
+        df_dev$status_at_horizon,
+        df_dev$A,
+        df_dev$pred,
+        1,
+        df_dev$ipc
+      ),
+      score$AUC$score$AUC,
+      tolerance = 0.01
+    )
+    expect_equal(
+      cf_oeratio(
+        df_dev$status_at_horizon,
+        df_dev$A,
+        df_dev$pred,
+        1,
+        df_dev$ipc
+      ),
+      mean(df_dev$pred)/mean(df_dev$status_at_horizon_uncensored),
+      tolerance = 0.01
+    )
 })
 
