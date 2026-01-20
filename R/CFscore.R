@@ -76,7 +76,7 @@ CFscore <- function(
   }
   cfscore$iptw <- iptw_weights
 
-
+  if (cfscore$)
 
 
 
