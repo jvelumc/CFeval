@@ -1,25 +1,83 @@
 library(survival)
 
+extract_lhs <- function(data, formula) {
+  mf <- model.frame(formula, data)
+  unname(model.response(mf))
+}
+
+rhs_is_one <- function(formula) {
+  identical(formula[[3]], 1)
+}
+
+
+# treatment formula mag A ~ 1 zijn
 CFscore <- function(
-    data, model, predictions, outcome,
-    treatment_col, treatment_of_interest,
-    iptw_formula, iptw_weights,
+    data, model, predictions, outcome_formula,
+    treatment_formula, iptw_weights,
+    treatment_of_interest,
     cens.model = "cox", ipcw_weights, time_horizon,
     metrics = c("auc", "brier", "oeratio"),
     bootstrap = FALSE, bootstrap_iterations = 200
 ) {
-  data <- data.frame(a = c(1,2,3), b = c(2,3,4), status = c(T,F,T))
-  # outcome <- Surv(a, status == 1) ~ 1
-  outcome <- b ~ 1
 
-  mf <- model.frame(outcome, data)
-  y <- model.response(mf)
+  # checking input (move to seperate function?)
 
-  if (inherits(y, "Surv")) {
-    print("surv")
+  check_missing(data)
+  check_missing_xor(model, predictions)
+  check_missing(outcome_formula)
+  check_missing(treatment_formula)
+  check_missing(treatment_of_interest)
+
+  stopifnot(
+    "iptw_weights should be given if and only if r.h.s. of treatment_formula is 1"=
+      xor(rhs_is_one(treatment_formula), !missing(iptw_weights))
+  )
+
+  # assert rhs(outcome_formula != 1) iff surv model AND!missing(iptw_weights)
+  # handle formulas in general (lhs is 1 term, ...)
+
+  if (bootstrap == TRUE)
+    stopifnot("can't bootstrap if iptw are given" = !missing(iptw_weights))
+
+  # done checking input
+
+  cfscore <- list()
+  class(cfscore) <- "CFscore"
+
+  # get the observed outcome
+  cfscore$outcome <- extract_lhs(data, outcome_formula)
+  if (inherits(cfscore$outcome, "Surv")) {
+    cfscore$outcome_type <- "survival"
+    cfscore$time_horizon <- time_horizon
   } else {
+    cfscore$outcome_type <- "numeric"
     print("num")
   }
+
+  # get the treatment
+  cfscore$treatment_column <- treatment_formula[[2]]
+  cfscore$observed_treatment <- extract_lhs(data, treatment_formula)
+  cfscore$cf_treatment <- treatment_of_interest
+
+  # get the CF predictions
+  if (!missing(model)) {
+    predictions <- predict_CF(
+      model = model,
+      data = data,
+      A_column = cfscore$treatment_column,
+      CF_treatment = cfscore$cf_treatment,
+      cfscore$time_horizon
+    )
+  }
+
+  # get iptw
+  if (!missing(treatment_formula)) {
+    iptw_weights <- ip_weights(data, treatment_formula)
+  }
+  cfscore$iptw <- iptw_weights
+
+
+
 
 
 }

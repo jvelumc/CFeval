@@ -1,10 +1,21 @@
-a <- c(3,4,5)
+df_dev
 
-data <- data.frame(a = c(1,2,3), b = c(2,3,4), status = c(T,F,T))
+model <- glm(Y ~ A + P, family = "binomial", data = df_dev,
+             weights = ip_weights(df_dev, A ~ L))
 
-myfun <- function(data, outcome) {
+
+model
+
+riskRegression::Score()
+
+CFscore <- function(predictions, outcome_formula, data, trt, metrics) {
 
 
 }
 
-myfun(data, survival::Surv(a, status))
+
+
+
+CFscore.binary <- function(obs_outcome, obs_trt, cf_pred, cf_trt, ipw, metrics) {
+
+}
