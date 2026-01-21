@@ -1,9 +1,8 @@
-test_that("ipc simple correct", {
+test_that("ipc KM simple correct", {
   data <- data.frame(
     time = c(1,2,3),
     status = c(1,0,1)
   )
-
   expect_equal(
     ipc_weights(data, survival::Surv(time, status) ~ 1, type = "KM", time_horizon = 0.5),
     c(1,1,1)
@@ -42,6 +41,18 @@ test_that("ipc simple correct", {
     ipc_weights(data, survival::Surv(time, status) ~ 1, type = "KM", time_horizon = 3.5),
     c(0,1.5,0)
   )
+})
+
+
+test_that("ipc ties", {
+  data <- data.frame(
+    time = c(1,2,2,3),
+    status = c(1, 0, 1, 1)
+  )
+  expect_equal(
+    ipc_weights(data, )
+  )
+
 })
 
 test_that(

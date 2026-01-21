@@ -30,17 +30,21 @@ predict_cox <- function(model, data, time_horizon) {
   }
 
   idx <- findInterval(time_horizon, bh$time)
-  idx[idx == 0] <- NA  # horizon before first event
 
-  H0_horizon <- bh$hazard[idx]
+  H0_horizon <- numeric(n)
+  valid <- idx > 0
+  H0_horizon[valid] <- bh$hazard[idx[valid]]
 
-  # H0_horizon <- bh$hazard[max(which(bh$time <= time_horizon))]
   S0_horizon <- exp(-H0_horizon)
 
   lp <- predict(model, newdata = data, type = "lp")
 
   S_horizon <- S0_horizon^exp(lp)
   1-S_horizon
+
+
+
+
 }
 
 
