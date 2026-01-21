@@ -1,40 +1,37 @@
 ipc_weights <- function(data, formula, type, time_horizon) {
 
-  data <- data.frame(
-    time = c(1,2,3),
-    status = c(1,0,1)
-  )
-  formula <- Surv(time + 1, status) ~ 1
-  type <- "cox"
-  time_horizon <- 2.1
 
+  if (type == "KM")
+    stopifnot(rhs_is_one(formula))
 
   mf <- model.frame(formula, data)
   y <- model.response(mf)
-
   time <- y[, "time"]
   status <- y[, "status"]
 
-  y_flip <- survival::Surv(time, 1 - status)
+  flipped_form <- update.formula(formula, Surv(time, status == 0) ~ .)
 
-  if (type == "KM") {
-    fit <- survival::survfit(y_flip ~ 1)
-  } else {
-    mf_flip <- mf
-    mf_flip[[1]] <- y_flip
-    # fit <- survival::survfit(formula, data = mf_flip)
-    fit <- coxph(formula, data = mf_flip)
-  }
-
-  p_not_censor <- stepfun(fit$time, c(1, fit$surv))
-
+  p_uncensored <- switch(
+    type,
+    KM = {
+      fit <- survival::survfit(flipped_form, data = data)
+      p_not_censor <- stepfun(fit$time, c(1, fit$surv))
+      p_not_censor(pmin(time, time_horizon))
+    },
+    cox = {
+      fit <- coxph(flipped_form, data = data)
+      print(fit)
+      1-predict_cox(fit, data, pmin(time_horizon, time))
+    },
+    stop("cens.model ", type, " not implemented")
+  )
 
   # if censored before time horizon, weight is 0,
   # else, weight is 1/probability uncensored at event/time horizon
   w <- ifelse(
     status == 0 & time < time_horizon,
     0,
-    1 / p_not_censor(pmin(time, time_horizon))
+    1 / p_uncensored
   )
   unname(w)
 }

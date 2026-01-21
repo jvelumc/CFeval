@@ -1,5 +1,4 @@
-predict_CF <- function(model, data, A_column, CF_treatment,
-                       time_column, time_horizon) {
+predict_CF <- function(model, data, A_column, CF_treatment, time_horizon) {
   # predict outcome probabilities for all patients, setting their treatment
   # to CF_treatment
   data[[A_column]] <- CF_treatment
@@ -7,7 +6,7 @@ predict_CF <- function(model, data, A_column, CF_treatment,
     return(predict_glm(model, data))
   }
   if ("coxph" %in% class(model)) {
-    return(predict_cox(model, data, time_column, time_horizon))
+    return(predict_cox(model, data, time_horizon))
   }
   stop("model class", class(model), "not supported")
 }
@@ -18,15 +17,24 @@ predict_glm <- function(model, data) {
 }
 
 
-predict_cox <- function(model, data, time_column, time_horizon) {
-  # data[[time_column]] <- time_horizon
-  # 1 - predict(model, newdata = data, type = "survival")
-  # sf <- survfit(model, newdata = data)
-  # S_t <- summary(sf, times = time_horizon)$surv
-  # 1 - S_t
+predict_cox <- function(model, data, time_horizon) {
 
   bh <- survival::basehaz(model, centered = FALSE)
-  H0_horizon <- bh$hazard[max(which(bh$time <= time_horizon))]
+
+  n <- nrow(data)
+
+  if (length(time_horizon) == 1L) {
+    time_horizon <- rep(time_horizon, n)
+  } else if (length(time_horizon) != n) {
+    stop("time_horizon must have length 1 or nrow(data)")
+  }
+
+  idx <- findInterval(time_horizon, bh$time)
+  idx[idx == 0] <- NA  # horizon before first event
+
+  H0_horizon <- bh$hazard[idx]
+
+  # H0_horizon <- bh$hazard[max(which(bh$time <= time_horizon))]
   S0_horizon <- exp(-H0_horizon)
 
   lp <- predict(model, newdata = data, type = "lp")

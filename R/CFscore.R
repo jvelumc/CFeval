@@ -1,13 +1,5 @@
 library(survival)
 
-extract_lhs <- function(data, formula) {
-  mf <- model.frame(formula, data)
-  unname(model.response(mf))
-}
-
-rhs_is_one <- function(formula) {
-  identical(formula[[3]], 1)
-}
 
 
 # treatment formula mag A ~ 1 zijn
@@ -32,7 +24,8 @@ CFscore <- function(
     "iptw_weights should be given if and only if r.h.s. of treatment_formula is 1"=
       xor(rhs_is_one(treatment_formula), !missing(iptw_weights))
   )
-
+  # assert treatment is binary
+  # assert non-surival outcome is binary
   # assert rhs(outcome_formula != 1) iff surv model AND!missing(iptw_weights)
   # handle formulas in general (lhs is 1 term, ...)
 
@@ -50,7 +43,7 @@ CFscore <- function(
     cfscore$outcome_type <- "survival"
     cfscore$time_horizon <- time_horizon
   } else {
-    cfscore$outcome_type <- "numeric"
+    cfscore$outcome_type <- "binary"
     print("num")
   }
 
@@ -76,7 +69,9 @@ CFscore <- function(
   }
   cfscore$iptw <- iptw_weights
 
-  if (cfscore$)
+  if (cfscore$outcome_type == "survival") {
+
+  }
 
 
 

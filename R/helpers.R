@@ -2,13 +2,13 @@ is.formula <- function(x) {
   inherits(x, "formula")
 }
 
-check_missing <- function(arg) {
-  is_missing <- eval(call("missing", deparse(substitute(arg))),
-                     envir = parent.frame())
+extract_lhs <- function(data, formula) {
+  mf <- model.frame(formula, data)
+  unname(model.response(mf))
+}
 
-  if (is_missing) {
-    stop("Argument ", as.name(substitute(arg)), " is missing.", call. = FALSE)
-  }
+rhs_is_one <- function(formula) {
+  identical(formula[[3]], 1)
 }
 
 check_missing_xor <- function(arg1, arg2) {
