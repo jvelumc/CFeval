@@ -20,10 +20,6 @@ CFscore <- function(
   check_missing(treatment_formula)
   check_missing(treatment_of_interest)
 
-  stopifnot(
-    "iptw_weights should be given if and only if r.h.s. of treatment_formula is 1"=
-      xor(rhs_is_one(treatment_formula), !missing(iptw_weights))
-  )
   # assert treatment is binary
   # assert non-surival outcome is binary
   # assert rhs(outcome_formula != 1) iff surv model AND!missing(iptw_weights)
@@ -42,6 +38,11 @@ CFscore <- function(
   if (inherits(cfscore$outcome, "Surv")) {
     cfscore$outcome_type <- "survival"
     cfscore$time_horizon <- time_horizon
+    cfscore$status_at_horizon <- ifelse(
+      cfscore$outcome[, 1] < time_horizon,
+      cfscore$outcome[, 2],
+      F
+    )
   } else {
     cfscore$outcome_type <- "binary"
     print("num")
@@ -62,19 +63,65 @@ CFscore <- function(
       cfscore$time_horizon
     )
   }
+  cfscore$predictions <- predictions
 
   # get iptw
+  cfscore$ipt$method = "weights manually specified"
   if (!missing(treatment_formula)) {
-    iptw_weights <- ip_weights(data, treatment_formula)
+    cfscore$ipt$method <- "binomial glm"
+    cfscore$ipt$propensity_formula <- treatment_formula
+    iptw <- ipt_weights(data, treatment_formula)
+    iptw_weights <- iptw$weights
+    cfscore$ipt$model <- iptw$model
   }
-  cfscore$iptw <- iptw_weights
+  cfscore$ipt$weights <- iptw_weights
 
+  # get ipcw
   if (cfscore$outcome_type == "survival") {
+    cfscore$ipc$method <- "weights manually specified"
+    if (missing(ipcw_weights)) {
+      cfscore$ipc$method <- cens.model
+      cfscore$ipc$cens.formula <- outcome_formula
+      ipcw <- ipc_weights(df_dev, outcome_formula, cens.model, time_horizon)
+      ipcw_weights <- ipcw$weights
+      cfscore$ipc$model <- ipcw$model
+    }
+    cfscore$ipc$weights <- ipcw_weights
+  }
+
+  # compute metrics
+  if (cfscore$outcome_type == "survival") {
+    if ("auc" %in% metrics) {
+      cfscore$score$auc <- cf_auc(
+        obs_outcome = cfscore$status_at_horizon,
+        obs_trt = cfscore$observed_treatment,
+        cf_pred = cfscore$predictions,
+        cf_trt = cfscore$cf_treatment,
+        ipw = cfscore$ipt$weights * cfscore$ipc$weights
+      )
+    }
+    if ("brier" %in% metrics) {
+      cfscore$score$brier <- cf_brier(
+        obs_outcome = cfscore$status_at_horizon,
+        obs_trt = cfscore$observed_treatment,
+        cf_pred = cfscore$predictions,
+        cf_trt = cfscore$cf_treatment,
+        ipw = cfscore$ipt$weights * cfscore$ipc$weights
+      )
+    }
+    if ("oeratio" %in% metrics) {
+      cfscore$score$oeratio <- cf_oeratio(
+        obs_outcome = cfscore$status_at_horizon,
+        obs_trt = cfscore$observed_treatment,
+        cf_pred = cfscore$predictions,
+        cf_trt = cfscore$cf_treatment,
+        ipw = cfscore$ipt$weights * cfscore$ipc$weights
+      )
+    }
 
   }
 
-
-
+  return(cfscore)
 }
 
 

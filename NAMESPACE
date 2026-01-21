@@ -2,5 +2,4 @@
 
 S3method(plot,cfscore)
 S3method(print,cfscore)
-export(CFscore)
-export(ip_weights)
+export(ipt_weights)

@@ -11,6 +11,17 @@ rhs_is_one <- function(formula) {
   identical(formula[[3]], 1)
 }
 
+
+check_missing <- function(arg) {
+  is_missing <- eval(call("missing", deparse(substitute(arg))),
+                     envir = parent.frame())
+
+  if (is_missing) {
+    stop("Argument ", as.name(substitute(arg)), " is missing.", call. = FALSE)
+  }
+}
+
+
 check_missing_xor <- function(arg1, arg2) {
   is_missing1 <- eval(call("missing", deparse(substitute(arg1))),
                       envir = parent.frame())

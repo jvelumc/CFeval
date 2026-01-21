@@ -16,12 +16,17 @@ ipc_weights <- function(data, formula, type, time_horizon) {
     KM = {
       fit <- survival::survfit(flipped_form, data = data)
       p_not_censor <- stepfun(fit$time, c(1, fit$surv))
-      p_not_censor(pmin(time, time_horizon))
+      list(
+        model = fit,
+        probability = p_not_censor(pmin(time, time_horizon))
+      )
     },
     cox = {
       fit <- coxph(flipped_form, data = data)
-      print(fit)
-      1-predict_cox(fit, data, pmin(time_horizon, time))
+      list(
+        model = fit,
+        probability = 1-predict_cox(fit, data, pmin(time_horizon, time))
+      )
     },
     stop("cens.model ", type, " not implemented")
   )
@@ -31,7 +36,11 @@ ipc_weights <- function(data, formula, type, time_horizon) {
   w <- ifelse(
     status == 0 & time < time_horizon,
     0,
-    1 / p_uncensored
+    1 / p_uncensored$probability
   )
-  unname(w)
+
+  list(
+    model = p_uncensored$model,
+    weights = unname(w)
+  )
 }

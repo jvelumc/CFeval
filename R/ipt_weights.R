@@ -6,10 +6,14 @@
 #'
 #' @returns a numeric vector of the IP weights
 #' @export
-ip_weights <- function(data, propensity_formula) {
+ipt_weights <- function(data, propensity_formula) {
   A <- all.vars(propensity_formula)[1]
   propensity_model <- stats::glm(propensity_formula, family = "binomial", data)
   prop_score <- stats::predict(propensity_model, type = "response")
   prob_trt <- ifelse(data[[A]] == 1, prop_score, 1 - prop_score)
-  1 / prob_trt
+  list(
+    model = propensity_model,
+    weights = 1 / prob_trt
+  )
 }
+

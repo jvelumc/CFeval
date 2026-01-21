@@ -4,19 +4,19 @@ test_that("ipc KM simple correct", {
     status = c(1,0,1)
   )
   expect_equal(
-    ipc_weights(data, survival::Surv(time, status) ~ 1, type = "KM", time_horizon = 0.5),
+    ipc_weights(data, survival::Surv(time, status) ~ 1, type = "KM", time_horizon = 0.5)$weights,
     c(1,1,1)
   )
   expect_equal(
-    ipc_weights(data, survival::Surv(time, status) ~ 1, type = "KM", time_horizon = 1.5),
+    ipc_weights(data, survival::Surv(time, status) ~ 1, type = "KM", time_horizon = 1.5)$weights,
     c(1,1,1)
   )
   expect_equal(
-    ipc_weights(data, survival::Surv(time, status) ~ 1, type = "KM", time_horizon = 2.5),
+    ipc_weights(data, survival::Surv(time, status) ~ 1, type = "KM", time_horizon = 2.5)$weights,
     c(1,0,2)
   )
   expect_equal(
-    ipc_weights(data, survival::Surv(time, status) ~ 1, type = "KM", time_horizon = 3.5),
+    ipc_weights(data, survival::Surv(time, status) ~ 1, type = "KM", time_horizon = 3.5)$weights,
     c(1,0,2)
   )
 
@@ -26,34 +26,34 @@ test_that("ipc KM simple correct", {
   )
 
   expect_equal(
-    ipc_weights(data, survival::Surv(time, status) ~ 1, type = "KM", time_horizon = 0.5),
+    ipc_weights(data, survival::Surv(time, status) ~ 1, type = "KM", time_horizon = 0.5)$weights,
     c(1,1,1)
   )
   expect_equal(
-    ipc_weights(data, survival::Surv(time, status) ~ 1, type = "KM", time_horizon = 1.5),
+    ipc_weights(data, survival::Surv(time, status) ~ 1, type = "KM", time_horizon = 1.5)$weights,
     c(0,1.5,1.5)
   )
   expect_equal(
-    ipc_weights(data, survival::Surv(time, status) ~ 1, type = "KM", time_horizon = 2.5),
+    ipc_weights(data, survival::Surv(time, status) ~ 1, type = "KM", time_horizon = 2.5)$weights,
     c(0,1.5,1.5)
   )
   expect_equal(
-    ipc_weights(data, survival::Surv(time, status) ~ 1, type = "KM", time_horizon = 3.5),
+    ipc_weights(data, survival::Surv(time, status) ~ 1, type = "KM", time_horizon = 3.5)$weights,
     c(0,1.5,0)
   )
 })
 
-
-test_that("ipc ties", {
-  data <- data.frame(
-    time = c(1,2,2,3),
-    status = c(1, 0, 1, 1)
-  )
-  expect_equal(
-    ipc_weights(data, )
-  )
-
-})
+# tests with some survival ties (where one has outcome, one is censor)?
+# test_that("ipc ties", {
+#   data <- data.frame(
+#     time = c(1,2,2,3),
+#     status = c(1, 0, 1, 1)
+#   )
+#   expect_equal(
+#     ipc_weights(data, )
+#   )
+#
+# })
 
 test_that(
   "ipc-weighted population represents uncensored population,
@@ -92,7 +92,7 @@ test_that(
       return(df)
     }
     df_dev <- build_data(1000000)
-    df_dev$ipc <- ipc_weights(df_dev, survival::Surv(time, status) ~ 1, "KM", horizon)
+    df_dev$ipc <- ipc_weights(df_dev, survival::Surv(time, status) ~ 1, "KM", horizon)$weights
     model <- survival::coxph(
       survival::Surv(time_at_horizon, status_at_horizon) ~ L1 + L2 + P1 + P2,
       data = df_dev[df_dev$ipc > 0, ], weights = ipc)
@@ -179,7 +179,7 @@ test_that(
     }
     set.seed(1)
     data <- build_data(600000)
-    data$ipc <- ipc_weights(data, survival::Surv(time, status) ~ L1 + P2, "cox", horizon)
+    data$ipc <- ipc_weights(data, survival::Surv(time, status) ~ L1 + P2, "cox", horizon)$weights
     model <- survival::coxph(
       survival::Surv(time_at_horizon, status_at_horizon) ~ L1 + L2 + P1 + P2,
       data = data[data$ipc > 0, ], weights = ipc)
@@ -193,6 +193,8 @@ test_that(
 
     score <- riskRegression::Score(list(data$pred), Hist(failuretime, A) ~ 1,
                                    data = data, times = horizon, null.model = F)
+
+    # TODO: should this be status_at_horizon?
 
     expect_equal(
       cf_brier(
@@ -232,4 +234,3 @@ test_that(
   }
 )
 
-# tests with some survival ties (where one has outcome, one is censor)?
