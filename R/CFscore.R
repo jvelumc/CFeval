@@ -114,72 +114,19 @@ CFscore <- function(
     }
   }
 
+  if (bootstrap == TRUE) {
+    lapply(
+      X = as.list(1:bootstrap_iterations),
+      FUN = function(x) {
+
+      }
+    )
+  }
+
   return(cfscore)
 }
 
 
-# riskRegression::Score()
-# CFscore_undertrt <- function(data, cf, Y, A_column_name, ipw, trt,
-#                              metrics, sample = 1:nrow(data)) {
-#   lapply(
-#     X = metrics, # Name metrics s.t. result is also named
-#     FUN = function(metric) {
-#       lapply(
-#         X = cf,
-#         FUN = function(pred) {
-#           CFscore_undertrt_metric_pred(
-#             data[sample, ], pred[sample], Y[sample],
-#             A_column_name, ipw, trt, metric
-#           )
-#         }
-#       )
-#     }
-#   )
-# }
-#
-# CFscore_undertrt_metric_pred <- function(data, cf, Y, A_column_name, ipw, trt,
-#                                          metric) {
-#   # rows of patients with trt of interest
-#   trt_ids <- data[[A_column_name]] == trt
-#
-#   if (metric == "brier") {
-#     results <- brier_weighted(
-#       predictions = cf[trt_ids],
-#       outcomes = Y[trt_ids],
-#       weights = ipw[trt_ids]
-#     )
-#   }
-#
-#   if (metric == "auc") {
-#     results <- auc_weighted(
-#       predictions = cf[trt_ids],
-#       outcomes = Y[trt_ids],
-#       weights = ipw[trt_ids]
-#     )
-#   }
-#
-#   if (metric == "oe") {
-#     results <- calibration_weighted(
-#       outcomes = Y,
-#       predictions = cf,
-#       treatments = data[[A_column_name]],
-#       treatment_of_interest = trt,
-#       weights = ipw
-#     )
-#   }
-#
-#   if (metric == "oeplot") {
-#     results <- calibration_plot_weighted(
-#       outcomes = Y,
-#       predictions = cf,
-#       treatments = data[[A_column_name]],
-#       treatment_of_interest = trt,
-#       weights = ipw
-#     )
-#   }
-#
-#   return(results)
-# }
 #
 # name_unnamed_list <- function(x) {
 #   # give names, if not named

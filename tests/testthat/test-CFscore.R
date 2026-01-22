@@ -283,4 +283,3 @@ test_that("CFscore metrics equal to unobserved CF metrics, surv, cox censor", {
   expect_equal(cfscore$score$brier, score$Brier$score$Brier, tolerance = 0.01)
   expect_equal(cfscore$score$oeratio, score$oe, tolerance = 0.01)
 })
-
