@@ -26,7 +26,7 @@ test_that(
     df_flipped$Y <- 1 - df_flipped$Y
     df_toy <- rbind(df_toy, df_flipped)
 
-    df_toy$ipw <- ip_weights(df_toy, A ~ L)
+    df_toy$ipw <- ipt_weights(df_toy, A ~ L)$weights
 
     is_whole <- function(x, tol = .Machine$double.eps^0.5) {
       abs(x - round(x)) < tol
@@ -161,7 +161,7 @@ test_that(
     set.seed(1)
     df_dev <- build_data(200, shift = 1)
     # causal model
-    df_dev$ipw <- ip_weights(df_dev, A ~ L1 + L2)
+    df_dev$ipw <- ipt_weights(df_dev, A ~ L1 + L2)$weights
 
     model <- suppressWarnings(
       glm(Y ~ A + P1 + P2, family = "binomial",

@@ -45,7 +45,6 @@ CFscore <- function(
     )
   } else {
     cfscore$outcome_type <- "binary"
-    print("num")
   }
 
   # get the treatment
@@ -118,7 +117,17 @@ CFscore <- function(
         ipw = cfscore$ipt$weights * cfscore$ipc$weights
       )
     }
-
+  } else {
+    for (m in metrics) {
+      cfscore$score[[m]] <- cf_metric(
+        m,
+        obs_outcome = cfscore$outcome,
+        obs_trt = cfscore$observed_treatment,
+        cf_pred = cfscore$predictions,
+        cf_trt = cfscore$cf_treatment,
+        ipw = cfscore$ipt$weights
+      )
+    }
   }
 
   return(cfscore)

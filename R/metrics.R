@@ -1,3 +1,13 @@
+
+cf_metric <- function(metric, ...) {
+  switch (metric,
+    "brier" = cf_brier(...),
+    "auc" = cf_auc(...),
+    "oeratio" = cf_oeratio(...),
+    stop(metric, " not implemented")
+  )
+}
+
 # Brier
 
 cf_brier <- function(obs_outcome, obs_trt, cf_pred, cf_trt, ipw) {
