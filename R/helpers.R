@@ -56,3 +56,9 @@ print_model <- function(model) {
   formula <- paste(lhs, rhs, sep = " = ")
   formula
 }
+
+
+simulate_time_to_event <- function(n, constant_baseline_haz, LP) {
+  u <- runif(n)
+  -log(u) / (constant_baseline_haz * exp(LP))
+}

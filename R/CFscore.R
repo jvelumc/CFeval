@@ -24,6 +24,7 @@ CFscore <- function(
   # assert non-surival outcome is binary
   # assert rhs(outcome_formula != 1) iff surv model AND!missing(iptw_weights)
   # handle formulas in general (lhs is 1 term, ...)
+  # assert longest surv time is longer than time horizon, to avoid annoying weights
 
   if (bootstrap == TRUE)
     stopifnot("can't bootstrap if iptw are given" = !missing(iptw_weights))
@@ -90,26 +91,9 @@ CFscore <- function(
 
   # compute metrics
   if (cfscore$outcome_type == "survival") {
-    if ("auc" %in% metrics) {
-      cfscore$score$auc <- cf_auc(
-        obs_outcome = cfscore$status_at_horizon,
-        obs_trt = cfscore$observed_treatment,
-        cf_pred = cfscore$predictions,
-        cf_trt = cfscore$cf_treatment,
-        ipw = cfscore$ipt$weights * cfscore$ipc$weights
-      )
-    }
-    if ("brier" %in% metrics) {
-      cfscore$score$brier <- cf_brier(
-        obs_outcome = cfscore$status_at_horizon,
-        obs_trt = cfscore$observed_treatment,
-        cf_pred = cfscore$predictions,
-        cf_trt = cfscore$cf_treatment,
-        ipw = cfscore$ipt$weights * cfscore$ipc$weights
-      )
-    }
-    if ("oeratio" %in% metrics) {
-      cfscore$score$oeratio <- cf_oeratio(
+    for (m in metrics) {
+      cfscore$score[[m]] <- cf_metric(
+        m,
         obs_outcome = cfscore$status_at_horizon,
         obs_trt = cfscore$observed_treatment,
         cf_pred = cfscore$predictions,
