@@ -81,7 +81,7 @@ CFscore <- function(
     if (missing(ipcw_weights)) {
       cfscore$ipc$method <- cens.model
       cfscore$ipc$cens.formula <- outcome_formula
-      ipcw <- ipc_weights(df_dev, outcome_formula, cens.model, time_horizon)
+      ipcw <- ipc_weights(data, outcome_formula, cens.model, time_horizon)
       ipcw_weights <- ipcw$weights
       cfscore$ipc$model <- ipcw$model
     }
