@@ -1,24 +1,15 @@
 library(survival)
 
-
-
-# treatment formula mag A ~ 1 zijn
-CFscore <- function(
-    data, model, predictions, outcome_formula,
-    treatment_formula, iptw_weights,
-    treatment_of_interest,
-    cens.model = "cox", ipcw_weights, time_horizon,
-    metrics = c("auc", "brier", "oeratio"),
-    bootstrap = FALSE, bootstrap_iterations = 200
-) {
-
-  # checking input (move to seperate function?)
-
+CFscore <- function(object, data, outcome_formula, treatment_formula,
+                    treatment_of_interest, metrics = c("auc", "brier", "oeratio"),
+                    time_horizon, cens.model = "cox",
+                    bootstrap = 0, iptw, ipcw) {
   check_missing(data)
-  check_missing_xor(model, predictions)
+  check_missing(object)
   check_missing(outcome_formula)
   check_missing(treatment_formula)
   check_missing(treatment_of_interest)
+
 
   # assert treatment is binary
   # assert non-surival outcome is binary
@@ -29,7 +20,7 @@ CFscore <- function(
   if (bootstrap == TRUE)
     stopifnot("can't bootstrap if iptw are given" = !missing(iptw_weights))
 
-  # done checking input
+  # more input checking, move to seperate function
 
   cfscore <- list()
   class(cfscore) <- "CFscore"
@@ -51,49 +42,49 @@ CFscore <- function(
   # get the treatment
   cfscore$treatment_column <- treatment_formula[[2]]
   cfscore$observed_treatment <- extract_lhs(data, treatment_formula)
-  cfscore$cf_treatment <- treatment_of_interest
+  cfscore$treatment_of_interest <- treatment_of_interest
 
-  # get the CF predictions
-  if (!missing(model)) {
-    model <- make_list_if_not_list(model)
-
-    cfscore$predictions <- lapply(
-      X = model,
-      FUN = function(x) {
+  # make a list of risk predictions
+  object <- make_list_if_not_list(object)
+  cfscore$predictions <- lapply(
+    X = object,
+    FUN = function(x) {
+      if (is.numeric(x) && is.null(dim(x))) {
+        x # user supplied risk predictions
+      } else {
         predict_CF(
-          model = x,
-          data = data,
-          A_column = cfscore$treatment_column,
-          CF_treatment = cfscore$cf_treatment,
-          cfscore$time_horizon
+          x,
+          data,
+          cfscore$treatment_column,
+          cfscore$treatment_of_interest,
+          time_horizon = cfscore$time_horizon
         )
       }
-    )
-  } else {
-    cfscore$predictions <- make_list_if_not_list(predictions)
-  }
+    }
+  )
+
   # get iptw
   cfscore$ipt$method = "weights manually specified"
   if (!missing(treatment_formula)) {
     cfscore$ipt$method <- "binomial glm"
     cfscore$ipt$propensity_formula <- treatment_formula
-    iptw <- ipt_weights(data, treatment_formula)
-    iptw_weights <- iptw$weights
-    cfscore$ipt$model <- iptw$model
+    ipt <- ipt_weights(data, treatment_formula)
+    iptw <- ipt$weights
+    cfscore$ipt$model <- ipt$model
   }
-  cfscore$ipt$weights <- iptw_weights
+  cfscore$ipt$weights <- iptw
 
   # get ipcw
   if (cfscore$outcome_type == "survival") {
     cfscore$ipc$method <- "weights manually specified"
-    if (missing(ipcw_weights)) {
+    if (missing(ipcw)) {
       cfscore$ipc$method <- cens.model
       cfscore$ipc$cens.formula <- outcome_formula
-      ipcw <- ipc_weights(data, outcome_formula, cens.model, time_horizon)
-      ipcw_weights <- ipcw$weights
-      cfscore$ipc$model <- ipcw$model
+      ipc <- ipc_weights(data, outcome_formula, cens.model, time_horizon)
+      ipcw <- ipc$weights
+      cfscore$ipc$model <- ipc$model
     }
-    cfscore$ipc$weights <- ipcw_weights
+    cfscore$ipc$weights <- ipcw
   }
 
   # compute metrics while sapplying over each model
@@ -107,7 +98,7 @@ CFscore <- function(
             obs_outcome = cfscore$status_at_horizon,
             obs_trt = cfscore$observed_treatment,
             cf_pred = x,
-            cf_trt = cfscore$cf_treatment,
+            cf_trt = cfscore$treatment_of_interest,
             ipw = cfscore$ipt$weights * cfscore$ipc$weights
           )
         }
@@ -123,7 +114,7 @@ CFscore <- function(
             obs_outcome = cfscore$outcome,
             obs_trt = cfscore$observed_treatment,
             cf_pred = x,
-            cf_trt = cfscore$cf_treatment,
+            cf_trt = cfscore$treatment_of_interest,
             ipw = cfscore$ipt$weights
           )
         }
@@ -133,10 +124,10 @@ CFscore <- function(
 
   if (bootstrap == TRUE) {
     cfscore$bootstrap_iterations <- bootstrap_iterations
-
   }
 
   return(cfscore)
+
 }
 
 
@@ -161,159 +152,4 @@ make_list_if_not_list <- function(x) {
   x
 }
 
-
-
-
-#' Main CFscore function
-#'
-#' @param validation_data A data.frame on which the model is to be validated.
-#' @param model A glm (lm?) to be validated, or a list of glm's to be validated.
-#' @param predictions  A numeric vector of predictions, or a list of numeric
-#'   vectors of predictions. Either model or predictions must be given, not
-#'   both.
-#' @param outcome_column A character string indicating the name of the observed
-#'   outcome column in data, or a numeric vector of the observed outcomes.
-#' @param propensity_formula A formula used to estimate the inverse-probability
-#'   weights for the validation data. Treatment variable should be on the left
-#'   hand side, all confounders on the right hand side. It is possible that
-#'   there is a different set of confounders in the validation dataset compared
-#'   to the model-development dataset. Either this or ipweights must be given
-#' @param ipweights The inverse probabilty weights for the validation data. Can be
-#'   either string indicating the name of the ip column in the validation data,
-#'   or a numeric vector of ip-weights.
-#' @param treatment_column A character string indicating the name of the realized treatment
-#'   column in data. Must be given if ipw's are specified. It is automatically
-#'   inferred from propensity_formula if given.
-#' @param treatment_of_interest A treatment level  for which the counterfactual perormance measures should be evaluated.
-#' @param metrics The metrics to be computed, options are c("auc", "brier",
-#' "oe", "oeplot")
-#' @param null.model If TRUE, fit a null model on the counterfactual validation data
-#' @param bootstrap If TRUE, a 95% CI around performance metrics is estimated by
-#'   bootstrapping
-#' @param bootstrap_iterations the number of bootstrap iterations
-#' @param quiet If set to TRUE, don't print assumptions
-#'
-#' @returns A list with Performance metrics
-#' @export
-#'
-#' @examples
-#'
-#' CFscore(
-#'   validation_data = df_val,
-#'   model = list("naive model" = naive_model, "causal model" = causal_model),
-#'   outcome_column = "Y",
-#'   propensity_formula = A ~ L,
-#'   treatment_of_interest = 0
-#' )
-# CFscore <- function(validation_data, model, predictions, outcome_column,
-#                     propensity_formula, ipweights,
-#                     treatment_column, treatment_of_interest,
-#                     metrics = c("auc", "brier", "oe", "oeplot"),
-#                     null.model = TRUE, bootstrap = FALSE,
-#                     bootstrap_iterations = 200,
-#                     quiet = FALSE) {
-#   check_missing(validation_data)
-#   check_missing_xor(model, predictions)
-#   check_missing(outcome_column)
-#   check_missing_xor(propensity_formula, ipweights)
-#   check_missing_xor(propensity_formula, treatment_column)
-#   check_missing(treatment_of_interest)
-#
-#   # extract treatment_column & ipweights from propensity formula if given
-#   if (missing(treatment_column)) {
-#     treatment_column <- all.vars(propensity_formula)[1]
-#   }
-#   if (!missing(propensity_formula)) {
-#     ipweights <- ip_weights(validation_data, propensity_formula)
-#   }
-#
-#   # extract predictions from models
-#   if (!missing(model)) {
-#     model <- make_list_if_not_list(model)
-#
-#     predictions <- lapply(model, function(mod) {
-#       predict_CF(
-#         model = mod,
-#         data = validation_data,
-#         A_column = treatment_column,
-#         CF_treatment = treatment_of_interest
-#       )
-#     })
-#   }
-#   predictions <- make_list_if_not_list(predictions)
-#
-#   # get outcome vector
-#   if (is.character(outcome_column) == TRUE) {
-#     outcome_column <- validation_data[[outcome_column]]
-#   }
-#
-#   correct_trt_id <- validation_data[[treatment_column]] == treatment_of_interest
-#
-#   # fit a null model on counterfactual validation data
-#   if (null.model == TRUE) {
-#     null_model <- lm(
-#       outcome_column[correct_trt_id] ~ 1,
-#       weights = ipweights[correct_trt_id]
-#     )
-#
-#     null_preds <- predict(null_model,
-#       newdata = validation_data,
-#       type = "response"
-#     )
-#
-#     predictions <- c(list("null.model" = null_preds), predictions)
-#   }
-#
-#   if (anyDuplicated(names(predictions))) {
-#     stop("Multiple models with name '",
-#          names(predictions)[duplicated(names(predictions))][1],
-#          "' found, please provide unique names (and don't use name ",
-#          "'null.model' if null.model = TRUE).")
-#   }
-#
-#   # make metric named
-#   names(metrics) <- metrics
-#
-#   cfscore <- list()
-#
-#   cfscore$results <- CFscore_undertrt(
-#     data = validation_data,
-#     cf = predictions,
-#     Y = outcome_column,
-#     A_column_name = treatment_column,
-#     ipw = ipweights,
-#     trt = treatment_of_interest,
-#     metric = metrics
-#   )
-#
-#   if (bootstrap == TRUE) {
-#     b <- run_bootstrap(
-#       data = validation_data,
-#       propensity_formula = propensity_formula,
-#       predictions = predictions,
-#       Y = outcome_column,
-#       A = treatment_column,
-#       treatment_of_interest = treatment_of_interest,
-#       metrics = metrics,
-#       iterations = bootstrap_iterations
-#     )
-#     cfscore$results_bootstrap <- b
-#   }
-#
-#   cfscore$models <- names(predictions)
-#   cfscore$metrics <- metrics
-#   cfscore$ipweights <- ipweights
-#   cfscore$treatment_column <- treatment_column
-#   cfscore$treatment_of_interest <- treatment_of_interest
-#   cfscore$bootstrap <- bootstrap
-#   if (!missing(propensity_formula)) {
-#     cfscore$propensity <- propensity_formula
-#     cfscore$confounders <- all.vars(propensity_formula)[-1]
-#   }
-#   cfscore$quiet <- quiet
-#
-#   class(cfscore) <- "cfscore"
-#   return(cfscore)
-# }
-#
 

@@ -16,14 +16,14 @@ test_that("supplying (list of) model or predictions equivalent", {
   expect_equal(
     CFscore(
       data = data,
-      model = model1,
+      object = model1,
       outcome_formula = Y ~ 1,
       treatment_formula = A ~ L,
       treatment_of_interest = 0
     ),
     CFscore(
       data = data,
-      model = list(model1),
+      object = list(model1),
       outcome_formula = Y ~ 1,
       treatment_formula = A ~ L,
       treatment_of_interest = 0
@@ -33,14 +33,14 @@ test_that("supplying (list of) model or predictions equivalent", {
   expect_equal(
     CFscore(
       data = data,
-      model = list(model2),
+      object = list(model2),
       outcome_formula = Y ~ 1,
       treatment_formula = A ~ L,
       treatment_of_interest = 0
     ),
     CFscore(
       data = data,
-      predictions = predict_CF(model2, data, "A", 0),
+      object = predict_CF(model2, data, "A", 0),
       outcome_formula = Y ~ 1,
       treatment_formula = A ~ L,
       treatment_of_interest = 0
@@ -50,14 +50,14 @@ test_that("supplying (list of) model or predictions equivalent", {
   expect_equal(
     CFscore(
       data = data,
-      model = list(aa = model2),
+      object = list(aa = model2),
       outcome_formula = Y ~ 1,
       treatment_formula = A ~ L,
       treatment_of_interest = 0
     ),
     CFscore(
       data = data,
-      predictions = list(aa = predict_CF(model2, data, "A", 0)),
+      object = list(aa = predict_CF(model2, data, "A", 0)),
       outcome_formula = Y ~ 1,
       treatment_formula = A ~ L,
       treatment_of_interest = 0
@@ -65,6 +65,8 @@ test_that("supplying (list of) model or predictions equivalent", {
   )
 })
 
+
+# TODO manual iptw/ipcw equivalent to equivalent models
 
 
 
@@ -94,7 +96,7 @@ test_that("CFscore metrics equal to unobserved CF metrics, binary outcome", {
 
   cfscore <- CFscore(
     data = data,
-    model = model,
+    object = model,
     outcome_formula = Y ~ 1,
     treatment_formula = A ~ L,
     treatment_of_interest = 0
@@ -141,7 +143,7 @@ test_that("CFscore metrics equal to unobserved CF metrics, surv, uncensored", {
 
   cfscore <- CFscore(
     data = data,
-    model = model,
+    object = model,
     outcome_formula = Surv(time, status) ~ 1,
     treatment_formula = A ~ L,
     treatment_of_interest = 0,
@@ -193,7 +195,7 @@ test_that("CFscore metrics equal to unobserved CF metrics, surv, censor at T", {
 
   cfscore <- CFscore(
     data = data,
-    model = model,
+    object = model,
     outcome_formula = Surv(time, status) ~ 1,
     treatment_formula = A ~ L,
     treatment_of_interest = 0,
@@ -252,7 +254,7 @@ test_that("CFscore metrics equal to unobserved CF metrics, surv, KM censor", {
 
   cfscore <- CFscore(
     data = data,
-    model = model,
+    object = model,
     outcome_formula = Surv(time, status) ~ 1,
     treatment_formula = A ~ L,
     treatment_of_interest = 0,
@@ -277,7 +279,7 @@ test_that("CFscore metrics equal to unobserved CF metrics, surv, KM censor", {
   # also try treatment == 1 for good measure
   cfscore1 <- CFscore(
     data = data,
-    model = model,
+    object = model,
     outcome_formula = Surv(time, status) ~ 1,
     treatment_formula = A ~ L,
     treatment_of_interest = 1,
@@ -333,7 +335,7 @@ test_that("CFscore metrics equal to unobserved CF metrics, surv, cox censor", {
 
   cfscore <- CFscore(
     data = data,
-    model = model,
+    object = model,
     outcome_formula = Surv(time, status) ~ L + P + A,
     treatment_formula = A ~ L,
     treatment_of_interest = 0,
