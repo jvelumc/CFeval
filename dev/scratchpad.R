@@ -7,9 +7,13 @@ data <- data.frame(
 )
 data$A <- rbinom(n, 1, plogis(0.5+0.2*data$L))
 data$Y <- rbinom(n, 1, plogis(0.3*data$L + 0.6*data$P - 0.5*data$A))
+data$status <- data$Y
+data$time <- data$P
+
 
 model1 <- glm(Y ~ A + L, family = "binomial", data = data)
 model2 <- glm(Y ~ A + P, family = "binomial", data = data)
+model3 <- coxph(Surv(time, status) ~ L, data = data)
 
 cfscore <- CFscore(
   object = list(model1, model1, model2),
@@ -17,8 +21,19 @@ cfscore <- CFscore(
   outcome_formula = Y ~ 1,
   treatment_formula = A ~ L,
   treatment_of_interest = 1,
-  bootstrap = 200
+  # bootstrap = 20
 )
+
+CFscore(
+  model3,
+  data = data,
+  outcome_formula = Surv(time,status) ~ 1,
+  treatment_formula = A ~ L,
+  treatment_of_interest = 1,
+  time_horizon = 2
+)
+
+print(cfscore)
 
 cfscore$bootstrap
 

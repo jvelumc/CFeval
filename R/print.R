@@ -6,47 +6,67 @@ pp <- function(...) {
 
 
 #' @export
-print.cfscore <- function(x, ...) {
-  if (!x$quiet) {
-    assumptions(x)
-  }
+print.CFscore <- function(x, ...) {
 
-  numeric_metrics <- x$metrics[x$metrics != "oeplot"]
-
-  # if we bootstrapped, make 1 table for each metric
-  # if not, make 1 table for all
-  if (x$bootstrap == TRUE) {
-    for (metric in numeric_metrics) {
+  if (x$bootstrap_iterations != 0) {
+    for (metric in x$metrics) {
       cat("\n", metric, "\n\n", sep = "")
-
-      # build result table
-      tab <- data.frame(model = x$models)
-      tab[[metric]] <- unlist(x$results[[metric]][x$models])
-      tab$lower <- sapply(
-        x$models,
-        function(m)
-          quantile(x$results_bootstrap[[metric]][[m]], probs = 0.025)
-      )
-      tab$upper <- sapply(
-        x$models,
-        function(m)
-          quantile(x$results_bootstrap[[metric]][[m]], probs = 0.975)
-      )
+      tab <- data.frame(model = names(x$predictions))
+      tab[[metric]] <- x$score[[metric]]
+      tab$lower <- sapply(x$bootstrap$results[[metric]], function(x) x[[1]])
+      tab$upper <- sapply(x$bootstrap$results[[metric]], function(x) x[[2]])
       print(tab, digits = 3, row.names = FALSE)
     }
   } else {
     cat("\n")
-    tab <- data.frame(model = x$models)
-    for (metric in numeric_metrics) {
-      tab[[metric]] <- unlist(x$results[[metric]][x$models])
+    tab <- data.frame(model = names(x$predictions))
+    for (metric in x$metrics) {
+      tab[[metric]] <- x$score[[metric]]
     }
     print(tab, digits = 3, row.names = FALSE)
   }
-
-  if ("oeplot" %in% x$metrics) {
-    plot(x)
-  }
 }
+
+  # if (!x$quiet) {
+  #   assumptions(x)
+  # }
+  #
+  # numeric_metrics <- x$metrics[x$metrics != "oeplot"]
+  #
+  # # if we bootstrapped, make 1 table for each metric
+  # # if not, make 1 table for all
+  # if (x$bootstrap == TRUE) {
+  #   for (metric in numeric_metrics) {
+  #     cat("\n", metric, "\n\n", sep = "")
+  #
+  #     # build result table
+  #     tab <- data.frame(model = x$models)
+  #     tab[[metric]] <- unlist(x$results[[metric]][x$models])
+  #     tab$lower <- sapply(
+  #       x$models,
+  #       function(m)
+  #         quantile(x$results_bootstrap[[metric]][[m]], probs = 0.025)
+  #     )
+  #     tab$upper <- sapply(
+  #       x$models,
+  #       function(m)
+  #         quantile(x$results_bootstrap[[metric]][[m]], probs = 0.975)
+  #     )
+  #     print(tab, digits = 3, row.names = FALSE)
+  #   }
+  # } else {
+  #   cat("\n")
+  #   tab <- data.frame(model = x$models)
+  #   for (metric in numeric_metrics) {
+  #     tab[[metric]] <- unlist(x$results[[metric]][x$models])
+  #   }
+  #   print(tab, digits = 3, row.names = FALSE)
+  # }
+  #
+  # if ("oeplot" %in% x$metrics) {
+  #   plot(x)
+  # }
+
 
 #' @export
 plot.cfscore <- function(x, ...) {
@@ -66,7 +86,9 @@ plot.cfscore <- function(x, ...) {
 assumptions <- function(x) {
 
   if ("confounders" %in% names(x)) {
-    adjustment_text <- paste0("{", paste0(x$confounders, collapse = ", "), "}")
+    adjustment_text <- paste0(
+      "{", paste0(x$ipt$confounders, collapse = ", "), "}"
+    )
   } else {
     adjustment_text <- "given IP-weights"
   }
@@ -87,6 +109,29 @@ assumptions <- function(x) {
 
   pp("- No interference")
 
-  pp("- Correctly specified propensity formula")
+  pp("- Correctly specified propensity formula. Estimated treatment model is ",
+     print_model(x$ipt$model))
 
+  if (x$outcome_type == "survival") {
+    pp("- Censoring is accounted for with")
+  }
+}
+
+
+print_model <- function(model) {
+  link <- model$family$link
+  lhs_var <- model$formula[[2]]
+
+  lhs <- paste0(link, "(", lhs_var, ")")
+
+  var_names <- names(model$coefficients)
+
+  coef <- round(unname(model$coefficients), 2)
+
+  rhs <- paste(coef, var_names, sep = "*", collapse = " + ")
+  rhs <- gsub("*(Intercept)", "", rhs, fixed = TRUE)
+  rhs <- gsub("+ -", "- ", rhs, fixed = TRUE)
+
+  formula <- paste(lhs, rhs, sep = " = ")
+  formula
 }

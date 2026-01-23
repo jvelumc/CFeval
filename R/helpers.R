@@ -39,23 +39,7 @@ check_missing_xor <- function(arg1, arg2) {
 }
 
 
-print_model <- function(model) {
-  link <- model$family$link
-  lhs_var <- model$formula[[2]]
 
-  lhs <- paste0(link, "(", lhs_var, ")")
-
-  var_names <- names(model$coefficients)
-
-  coef <- round(unname(model$coefficients), 2)
-
-  rhs <- paste(coef, var_names, sep = "*", collapse = " + ")
-  rhs <- gsub("*(Intercept)", "", rhs, fixed = TRUE)
-  rhs <- gsub("+ -", "- ", rhs, fixed = TRUE)
-
-  formula <- paste(lhs, rhs, sep = " = ")
-  formula
-}
 
 
 simulate_time_to_event <- function(n, constant_baseline_haz, LP) {

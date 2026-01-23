@@ -3,7 +3,7 @@ library(survival)
 CFscore <- function(object, data, outcome_formula, treatment_formula,
                     treatment_of_interest, metrics = c("auc", "brier", "oeratio"),
                     time_horizon, cens.model = "cox",
-                    bootstrap = 0, iptw, ipcw) {
+                    bootstrap = 0, iptw, ipcw, quiet = FALSE) {
 
   check_missing(object)
   check_missing(data)
@@ -67,6 +67,7 @@ CFscore <- function(object, data, outcome_formula, treatment_formula,
   cfscore$ipt$method = "weights manually specified"
   if (!missing(treatment_formula)) {
     cfscore$ipt$method <- "binomial glm"
+    cfscore$ipt$confounders <- all.vars(treatment_formula)[-1]
     cfscore$ipt$propensity_formula <- treatment_formula
     ipt <- ipt_weights(data, treatment_formula)
     iptw <- ipt$weights
@@ -90,13 +91,13 @@ CFscore <- function(object, data, outcome_formula, treatment_formula,
   cfscore$metrics <- metrics
   cfscore$score <- get_metrics(cfscore)
 
-
+  cfscore$bootstrap_iterations <- bootstrap
   if (bootstrap != 0) {
-    cfscore$bootstrap_iterations <- bootstrap
     cfscore$bootstrap <- bootstrap(data, cfscore)
   }
-  return(cfscore)
 
+  cfscore$quiet <- quiet
+  return(cfscore)
 }
 
 get_metrics <- function(cfscore) {
@@ -137,7 +138,6 @@ get_metrics <- function(cfscore) {
   score
 }
 
-
 name_unnamed_list <- function(x) {
   # give names, if not named
   sapply(
@@ -158,5 +158,3 @@ make_list_if_not_list <- function(x) {
   names(x) <- name_unnamed_list(x)
   x
 }
-
-
