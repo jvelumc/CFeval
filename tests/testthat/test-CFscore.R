@@ -358,7 +358,7 @@ test_that("CFscore metrics equal to unobserved CF metrics, surv, cox censor", {
   expect_equal(unname(cfscore$score$oeratio), score$oe, tolerance = 0.01)
 })
 
-# minor bootstrap test
+# minor bootstrap tests
 test_that("results are in between lower & upper bootstrap", {
   set.seed(1)
   n <- 1000
@@ -402,3 +402,54 @@ test_that("results are in between lower & upper bootstrap", {
   )
 })
 
+test_that("results are in between lower & upper bootstrap, surv, cox censor", {
+  set.seed(1)
+  horizon <- 10
+  n <- 10000
+  data <- data.frame(
+    L = rnorm(n, mean = 0),
+    P = rnorm(n, mean = 0)
+  )
+  data$A <- rbinom(n, 1, plogis(0.2 + 0.5*data$L))
+
+  data$time0 <- simulate_time_to_event(n, 0.04, data$L + 0.5*data$P)
+  data$time1 <- simulate_time_to_event(n, 0.04, data$L + 0.5*data$P - 0.6)
+  data$censortime <- simulate_time_to_event(n, 0.04, 0.5*data$L + 0.6*data$P +
+                                              0.2*data$A)
+  data$time_uncensored <- ifelse(data$A == 1, data$time1, data$time0)
+  data$status_uncensored <- 1
+
+  data$status <- ifelse(data$time_uncensored <= data$censortime, TRUE, FALSE)
+  data$time <- ifelse(data$status == TRUE,
+                      data$time_uncensored,
+                      data$censortime)
+
+  model <- coxph(
+    formula = Surv(time, status) ~ P + A,
+    data = data
+  )
+
+  cfscore <- CFscore(
+    data = data,
+    object = model,
+    outcome_formula = Surv(time, status) ~ L + P + A,
+    treatment_formula = A ~ L,
+    treatment_of_interest = 0,
+    cens.model = "cox",
+    time_horizon = horizon,
+    bootstrap = 100
+  )
+
+  expect_true(
+    cfscore$score$auc > cfscore$bootstrap$results$auc[[1]][1] &
+      cfscore$score$auc < cfscore$bootstrap$results$auc[[1]][2]
+  )
+  expect_true(
+    cfscore$score$brier > cfscore$bootstrap$results$brier[[1]][1] &
+      cfscore$score$brier < cfscore$bootstrap$results$brier[[1]][2]
+  )
+  expect_true(
+    cfscore$score$oeratio > cfscore$bootstrap$results$oeratio[[1]][1] &
+      cfscore$score$oeratio < cfscore$bootstrap$results$oeratio[[1]][2]
+  )
+})

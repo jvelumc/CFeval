@@ -21,12 +21,12 @@ bootstrap_iteration <- function(data, cfscore) {
 
   if (cfscore$outcome_type == "survival") {
     bs_ipc <- ipc_weights(
-      data = data[bs_sample],
+      data = data[bs_sample, ],
       formula = cfscore$ipc$cens.formula,
       type = cfscore$ipc$method,
       time_horizon = cfscore$time_horizon
     )
-    bs_cfscore$status_at_horizon <- cfscore$status_at_horizon
+    bs_cfscore$status_at_horizon <- cfscore$status_at_horizon[bs_sample]
     bs_cfscore$ipc$weights <- bs_ipc$weights
   }
   metrics <- get_metrics(bs_cfscore)
