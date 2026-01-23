@@ -4,12 +4,12 @@ CFscore <- function(object, data, outcome_formula, treatment_formula,
                     treatment_of_interest, metrics = c("auc", "brier", "oeratio"),
                     time_horizon, cens.model = "cox",
                     bootstrap = 0, iptw, ipcw) {
-  check_missing(data)
+
   check_missing(object)
+  check_missing(data)
   check_missing(outcome_formula)
   check_missing(treatment_formula)
   check_missing(treatment_of_interest)
-
 
   # assert treatment is binary
   # assert non-surival outcome is binary
@@ -17,8 +17,8 @@ CFscore <- function(object, data, outcome_formula, treatment_formula,
   # handle formulas in general (lhs is 1 term, ...)
   # assert longest surv time is longer than time horizon, to avoid annoying weights
 
-  if (bootstrap == TRUE)
-    stopifnot("can't bootstrap if iptw are given" = !missing(iptw_weights))
+  if (bootstrap != 0)
+    stopifnot("can't bootstrap if iptw are given" = missing(iptw))
 
   # more input checking, move to seperate function
 
@@ -31,9 +31,9 @@ CFscore <- function(object, data, outcome_formula, treatment_formula,
     cfscore$outcome_type <- "survival"
     cfscore$time_horizon <- time_horizon
     cfscore$status_at_horizon <- ifelse(
-      cfscore$outcome[, 1] < time_horizon,
-      cfscore$outcome[, 2],
-      F
+      test = cfscore$outcome[, 1] < time_horizon,
+      yes = cfscore$outcome[, 2],
+      no = FALSE
     )
   } else {
     cfscore$outcome_type <- "binary"
@@ -87,10 +87,24 @@ CFscore <- function(object, data, outcome_formula, treatment_formula,
     cfscore$ipc$weights <- ipcw
   }
 
-  # compute metrics while sapplying over each model
+  cfscore$metrics <- metrics
+  cfscore$
+  cfscore$score <- get_metrics(cfscore)
+
+
+  if (bootstrap != 0) {
+    cfscore$bootstrap_iterations <- bootstrap
+    cfscore$bootstrap_results <- bootstrap(data, cfscore)
+  }
+  return(cfscore)
+
+}
+
+get_metrics <- function(cfscore) {
+  score <- list()
   if (cfscore$outcome_type == "survival") {
-    for (m in metrics) {
-      cfscore$score[[m]] <- sapply(
+    for (m in cfscore$metrics) {
+      score[[m]] <- sapply(
         X = cfscore$predictions,
         FUN = function(x) {
           cf_metric(
@@ -105,8 +119,8 @@ CFscore <- function(object, data, outcome_formula, treatment_formula,
       )
     }
   } else {
-    for (m in metrics) {
-      cfscore$score[[m]] <- sapply(
+    for (m in cfscore$metrics) {
+      score[[m]] <- sapply(
         X = cfscore$predictions,
         FUN = function(x) {
           cf_metric(
@@ -121,13 +135,7 @@ CFscore <- function(object, data, outcome_formula, treatment_formula,
       )
     }
   }
-
-  if (bootstrap == TRUE) {
-    cfscore$bootstrap_iterations <- bootstrap_iterations
-  }
-
-  return(cfscore)
-
+  score
 }
 
 

@@ -8,22 +8,28 @@ data <- data.frame(
 data$A <- rbinom(n, 1, plogis(0.5+0.2*data$L))
 data$Y <- rbinom(n, 1, plogis(0.3*data$L + 0.6*data$P - 0.5*data$A))
 
-model1 <- glm(Y ~ A, family = "binomial", data = data)
-model2 <- glm(Y ~ A + L, family = "binomial", data = data)
-model3 <- coxph(Surv(L, Y) ~ P, data = data)
-
-pred <- predict_CF(model2, data, "A", 1)
-
+model1 <- glm(Y ~ A + L, family = "binomial", data = data)
+model2 <- glm(Y ~ A + P, family = "binomial", data = data)
 
 cfscore <- CFscore(
-  object = pred,
+  object = list(model1, model1, model2),
   data = data,
   outcome_formula = Y ~ 1,
   treatment_formula = A ~ L,
-  treatment_of_interest = 1
+  treatment_of_interest = 1,
+  bootstrap = 5
 )
 
 
+cfscore$bootstrap_results
+
+
+
+
+# bootstrap iteration > metric > models
+# models > metrics > bootstrap iterations
+
+lapply(CFscore$predictions, function(x) print(x))
 
 
 object1 <- pred

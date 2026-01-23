@@ -1,30 +1,64 @@
-bootstrap <- function(data, cfscore) {
+bootstrap_iteration <- function(data, cfscore) {
+  # this could probably be refactored a bit, but will require efforts to
+  # refactor the main cfscore function too
+
+  # works by creating a new cfscore object based on the original, where all
+  # required data has been resampled (& new ipt & ipc weights)
+
   bs_sample <- sample(nrow(data), size = nrow(data), replace = T)
-  bs_iptw <- ipt_weights(data, cfscore$propensity_formula)
+  bs_ipt <- ipt_weights(data[bs_sample, ], cfscore$ipt$propensity_formula)
+  bs_pred <- lapply(cfscore$predictions, function(x) x[bs_sample])
 
-
-}
-
-
-
-
-
-bootstrap_iteration <- function(data, propensity_formula, predictions,
-                                Y, A, treatment_of_interest, metrics) {
-  bs_sample <- sample(nrow(data), size = nrow(data), replace = T)
-  bs_ip <- ip_weights(data[bs_sample, ], propensity_formula)
-  bs_results <- CFscore_undertrt(
-    data = data,
-    cf = predictions,
-    Y = Y,
-    A_column_name = A,
-    ipw = bs_ip,
-    trt = treatment_of_interest,
-    metrics = metrics,
-    sample = bs_sample
+  bs_cfscore <- list(
+    outcome_type = cfscore$outcome_type,
+    metrics = cfscore$metrics,
+    predictions = bs_pred,
+    outcome = cfscore$outcome[bs_sample],
+    observed_treatment = cfscore$observed_treatment[bs_sample],
+    treatment_of_interest = cfscore$treatment_of_interest
   )
-  bs_results
+  bs_cfscore$ipt$weights <- bs_ipt$weights
+
+  if (cfscore$outcome_type == "survival") {
+    bs_ipc <- ipc_weights(
+      data = data[bs_sample],
+      formula = cfscore$ipc$cens.formula,
+      type = cfscore$ipc$method,
+      time_horizon = cfscore$time_horizon
+    )
+    bs_cfscore$status_at_horizon <- cfscore$status_at_horizon
+    bs_cfscore$ipc$weights <- bs_ipc$weights
+  }
+  metrics <- get_metrics(bs_cfscore)
+
+  return(metrics)
 }
+
+
+bootstrap <- function(data, cfscore) {
+  b <- lapply_progress(
+    as.list(1:cfscore$bootstrap_iterations),
+    function(x) {
+      bootstrap_iteration(data, cfscore)
+    },
+    "bootstrapping"
+  )
+
+  # transpose results
+  # (iteration > metric > model) -> (metric > model > iteration)
+
+  transposed <- lapply(cfscore$metrics, function(m) {
+    P <- lapply(names(cfscore$predictions), function(p) {
+      sapply(b, function(i) i[[m]][[p]])
+    })
+    names(P) <- names(cfscore$predictions)
+    P
+  })
+  names(transposed) <- cfscore$metrics
+
+  transposed
+}
+
 
 lapply_progress <- function(x, FUN, task_description) {
 
@@ -40,48 +74,9 @@ lapply_progress <- function(x, FUN, task_description) {
   return(result)
 }
 
-
-ci <- function(values, cover = 0.95) {
-  lower <- (1-cover) / 2
-  upper <- 1 - lower
-  stats::quantile(values, probs = c(lower, upper))
-}
-
-get_bootstrapped_metric <- function(bootstrap_results, modelnumber, metric) {
-  sapply(
-    X = bootstrap_results,
-    FUN = function(boot_iter) boot_iter[[metric]][[modelnumber]]
-  )
-}
-
-run_bootstrap <- function(data, propensity_formula, predictions,
-                          Y, A, treatment_of_interest, metrics, iterations) {
-  b <- lapply_progress(
-    as.list(1:iterations),
-    function(x) {
-      bootstrap_iteration(data, propensity_formula, predictions, Y, A,
-                          treatment_of_interest, metrics)
-    },
-    "bootstrapping"
-  )
-
-  # collect bootstrap results into vectors
-  bootstrap_metrics <- lapply(
-    X = metrics,
-    FUN = function(metric) {
-      setNames(
-        lapply(
-          X = 1:length(predictions),
-          FUN = function(modelnumber) {
-            get_bootstrapped_metric(b, modelnumber, metric)
-          }
-        ),
-        names(predictions)
-      )
-    }
-  )
-
-  return(bootstrap_metrics)
-}
-
-
+#
+# ci <- function(values, cover = 0.95) {
+#   lower <- (1-cover) / 2
+#   upper <- 1 - lower
+#   stats::quantile(values, probs = c(lower, upper))
+# }
