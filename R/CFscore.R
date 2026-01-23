@@ -88,7 +88,6 @@ CFscore <- function(object, data, outcome_formula, treatment_formula,
   }
 
   cfscore$metrics <- metrics
-  cfscore$
   cfscore$score <- get_metrics(cfscore)
 
 

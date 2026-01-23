@@ -357,3 +357,48 @@ test_that("CFscore metrics equal to unobserved CF metrics, surv, cox censor", {
   expect_equal(unname(cfscore$score$brier), score$Brier$score$Brier, tolerance = 0.01)
   expect_equal(unname(cfscore$score$oeratio), score$oe, tolerance = 0.01)
 })
+
+# minor bootstrap test
+test_that("results are in between lower & upper bootstrap", {
+  set.seed(1)
+  n <- 1000
+  data <- data.frame(
+    L = rnorm(n, mean = 0),
+    P = rnorm(n, mean = 0)
+  )
+  data$A <- rbinom(n, 1, plogis(0.2+0.5*data$L))
+  data$Y0 <- rbinom(n, 1, plogis(0.1 + 0.3*data$L + 0.4*data$P))
+  data$Y1 <- rbinom(n, 1, plogis(0.1 + 0.3*data$L + 0.4*data$P - 0.4))
+  data$Y <- ifelse(data$A == 1, data$Y1, data$Y0)
+
+  model <- suppressWarnings(
+    glm(
+      Y ~ A + P,
+      family = "binomial",
+      data = data
+    )
+  )
+
+  cfscore <- CFscore(
+    data = data,
+    object = model,
+    outcome_formula = Y ~ 1,
+    treatment_formula = A ~ L,
+    treatment_of_interest = 0,
+    bootstrap = 200
+  )
+
+  expect_true(
+    cfscore$score$auc > cfscore$bootstrap$results$auc[[1]][1] &
+      cfscore$score$auc < cfscore$bootstrap$results$auc[[1]][2]
+  )
+  expect_true(
+    cfscore$score$brier > cfscore$bootstrap$results$brier[[1]][1] &
+      cfscore$score$brier < cfscore$bootstrap$results$brier[[1]][2]
+  )
+  expect_true(
+    cfscore$score$oeratio > cfscore$bootstrap$results$oeratio[[1]][1] &
+      cfscore$score$oeratio < cfscore$bootstrap$results$oeratio[[1]][2]
+  )
+})
+
