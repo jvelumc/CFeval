@@ -1,50 +1,28 @@
 set.seed(1)
-horizon <- 24.999
-adminstrative_censor <- 25
-n <- 100000
+n <- 10000
 
 data <- data.frame(
   L = rnorm(n, mean = 0),
   P = rnorm(n, mean = 0)
 )
+data$A <- rbinom(n, 1, plogis(0.5+0.2*data$L))
+data$Y <- rbinom(n, 1, plogis(0.3*data$L + 0.6*data$P - 0.5*data$A))
 
-data$time <- simulate_time_to_event(n, 0.07, data$L + 0.5*data$P)
-data$censortime <- simulate_time_to_event(n, 0.06, 0.5*data$L + 0.6*data$P)
+model1 <- glm(Y ~ A, family = "binomial", data = data)
+model2 <- glm(Y ~ A + L, family = "binomial", data = data)
+model3 <- coxph(Surv(L, Y) ~ P, data = data)
 
-summary(data$time)
-summary(data$censortime)
-
-data$status <- ifelse(
-  data$time <= data$censortime,
-  TRUE,
-  FALSE
-)
-data$time <- pmin(data$time, data$censortime)
-
-ipc_weights(data, Surv(time, status) ~ L + P,
-            type = "cox", time_horizon = horizon)$model
-
-# now artificially censor everybody at T = 25:
-data$status <- ifelse(data$time > adminstrative_censor, F, data$status)
-data$time <- pmin(data$time, adminstrative_censor)
-
-ipc_weights(data, Surv(time, status) ~ L + P,
-            type = "cox", time_horizon = horizon)$model
-
-
-
-
-
-data$time_uncensored <- ifelse(data$A == 1, data$time1, data$time0)
-data$status_uncensored <- 1
-
-
-
-data$time <- ifelse(
-  data$status == TRUE,
-  data$time_uncensored,
-  pmin(data$censortime, adminstrative_censor)
+cfscore <- CFscore(
+  data = data,
+  model = model1,
+  outcome_formula = Y ~ 1,
+  treatment_formula = A ~ L,
+  treatment_of_interest = 0
 )
 
-summary(data$status)
-summary(data$time)
+cfscore
+
+
+score <- riskRegression::Score.list(list(model1, model2), formula = Y ~ 1, data = data)
+
+score$AUC$score$AUC

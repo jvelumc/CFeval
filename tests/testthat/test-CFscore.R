@@ -1,3 +1,75 @@
+# input checks
+
+test_that("supplying (list of) model or predictions equivalent", {
+  set.seed(1)
+  n <- 1000
+  data <- data.frame(
+    L = rnorm(n, mean = 0),
+    P = rnorm(n, mean = 0)
+  )
+  data$A <- rbinom(n, 1, plogis(0.5+0.2*data$L))
+  data$Y <- rbinom(n, 1, plogis(0.3*data$L + 0.6*data$P - 0.5*data$A))
+
+  model1 <- glm(Y ~ P, family = "binomial", data = data)
+  model2 <- glm(Y ~ A + P, family = "binomial", data = data)
+
+  expect_equal(
+    CFscore(
+      data = data,
+      model = model1,
+      outcome_formula = Y ~ 1,
+      treatment_formula = A ~ L,
+      treatment_of_interest = 0
+    ),
+    CFscore(
+      data = data,
+      model = list(model1),
+      outcome_formula = Y ~ 1,
+      treatment_formula = A ~ L,
+      treatment_of_interest = 0
+    )
+  )
+
+  expect_equal(
+    CFscore(
+      data = data,
+      model = list(model2),
+      outcome_formula = Y ~ 1,
+      treatment_formula = A ~ L,
+      treatment_of_interest = 0
+    ),
+    CFscore(
+      data = data,
+      predictions = predict_CF(model2, data, "A", 0),
+      outcome_formula = Y ~ 1,
+      treatment_formula = A ~ L,
+      treatment_of_interest = 0
+    )
+  )
+
+  expect_equal(
+    CFscore(
+      data = data,
+      model = list(aa = model2),
+      outcome_formula = Y ~ 1,
+      treatment_formula = A ~ L,
+      treatment_of_interest = 0
+    ),
+    CFscore(
+      data = data,
+      predictions = list(aa = predict_CF(model2, data, "A", 0)),
+      outcome_formula = Y ~ 1,
+      treatment_formula = A ~ L,
+      treatment_of_interest = 0
+    )
+  )
+})
+
+
+
+
+# metrics
+
 test_that("CFscore metrics equal to unobserved CF metrics, binary outcome", {
 
   set.seed(1)
@@ -37,9 +109,9 @@ test_that("CFscore metrics equal to unobserved CF metrics, binary outcome", {
   )
   score$oe <- mean(data$Y0)/mean(Y0_predicted)
 
-  expect_equal(cfscore$score$auc, score$AUC$score$AUC, tolerance = 0.01)
-  expect_equal(cfscore$score$brier, score$Brier$score$Brier, tolerance = 0.01)
-  expect_equal(cfscore$score$oeratio, score$oe, tolerance = 0.01)
+  expect_equal(unname(cfscore$score$auc), score$AUC$score$AUC, tolerance = 0.01)
+  expect_equal(unname(cfscore$score$brier), score$Brier$score$Brier, tolerance = 0.01)
+  expect_equal(unname(cfscore$score$oeratio), score$oe, tolerance = 0.01)
 })
 
 test_that("CFscore metrics equal to unobserved CF metrics, surv, uncensored", {
@@ -86,9 +158,9 @@ test_that("CFscore metrics equal to unobserved CF metrics, surv, uncensored", {
   )
   score$oe <- mean(data$time0 <= horizon)/mean(time0_predicted)
 
-  expect_equal(cfscore$score$auc, score$AUC$score$AUC, tolerance = 0.01)
-  expect_equal(cfscore$score$brier, score$Brier$score$Brier, tolerance = 0.01)
-  expect_equal(cfscore$score$oeratio, score$oe, tolerance = 0.01)
+  expect_equal(unname(cfscore$score$auc), score$AUC$score$AUC, tolerance = 0.01)
+  expect_equal(unname(cfscore$score$brier), score$Brier$score$Brier, tolerance = 0.01)
+  expect_equal(unname(cfscore$score$oeratio), score$oe, tolerance = 0.01)
 })
 
 test_that("CFscore metrics equal to unobserved CF metrics, surv, censor at T", {
@@ -143,9 +215,9 @@ test_that("CFscore metrics equal to unobserved CF metrics, surv, censor at T", {
   )
   score$oe <- mean(data$time0 <= horizon)/mean(time0_predicted)
 
-  expect_equal(cfscore$score$auc, score$AUC$score$AUC, tolerance = 0.01)
-  expect_equal(cfscore$score$brier, score$Brier$score$Brier, tolerance = 0.01)
-  expect_equal(cfscore$score$oeratio, score$oe, tolerance = 0.01)
+  expect_equal(unname(cfscore$score$auc), score$AUC$score$AUC, tolerance = 0.01)
+  expect_equal(unname(cfscore$score$brier), score$Brier$score$Brier, tolerance = 0.01)
+  expect_equal(unname(cfscore$score$oeratio), score$oe, tolerance = 0.01)
 })
 
 test_that("CFscore metrics equal to unobserved CF metrics, surv, KM censor", {
@@ -198,9 +270,9 @@ test_that("CFscore metrics equal to unobserved CF metrics, surv, KM censor", {
   )
   score$oe <- mean(data$time0 <= horizon)/mean(time0_predicted)
 
-  expect_equal(cfscore$score$auc, score$AUC$score$AUC, tolerance = 0.01)
-  expect_equal(cfscore$score$brier, score$Brier$score$Brier, tolerance = 0.01)
-  expect_equal(cfscore$score$oeratio, score$oe, tolerance = 0.01)
+  expect_equal(unname(cfscore$score$auc), score$AUC$score$AUC, tolerance = 0.01)
+  expect_equal(unname(cfscore$score$brier), score$Brier$score$Brier, tolerance = 0.01)
+  expect_equal(unname(cfscore$score$oeratio), score$oe, tolerance = 0.01)
 
   # also try treatment == 1 for good measure
   cfscore1 <- CFscore(
@@ -223,9 +295,9 @@ test_that("CFscore metrics equal to unobserved CF metrics, surv, KM censor", {
   )
   score1$oe <- mean(data$time1 <= horizon)/mean(time1_predicted)
 
-  expect_equal(cfscore1$score$auc, score1$AUC$score$AUC, tolerance = 0.01)
-  expect_equal(cfscore1$score$brier, score1$Brier$score$Brier, tolerance = 0.01)
-  expect_equal(cfscore1$score$oeratio, score1$oe, tolerance = 0.01)
+  expect_equal(unname(cfscore1$score$auc), score1$AUC$score$AUC, tolerance = 0.01)
+  expect_equal(unname(cfscore1$score$brier), score1$Brier$score$Brier, tolerance = 0.01)
+  expect_equal(unname(cfscore1$score$oeratio), score1$oe, tolerance = 0.01)
 })
 
 test_that("CFscore metrics equal to unobserved CF metrics, surv, cox censor", {
@@ -279,7 +351,7 @@ test_that("CFscore metrics equal to unobserved CF metrics, surv, cox censor", {
   )
   score$oe <- mean(data$time0 <= horizon)/mean(time0_predicted)
 
-  expect_equal(cfscore$score$auc, score$AUC$score$AUC, tolerance = 0.01)
-  expect_equal(cfscore$score$brier, score$Brier$score$Brier, tolerance = 0.01)
-  expect_equal(cfscore$score$oeratio, score$oe, tolerance = 0.01)
+  expect_equal(unname(cfscore$score$auc), score$AUC$score$AUC, tolerance = 0.01)
+  expect_equal(unname(cfscore$score$brier), score$Brier$score$Brier, tolerance = 0.01)
+  expect_equal(unname(cfscore$score$oeratio), score$oe, tolerance = 0.01)
 })

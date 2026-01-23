@@ -55,16 +55,23 @@ CFscore <- function(
 
   # get the CF predictions
   if (!missing(model)) {
-    predictions <- predict_CF(
-      model = model,
-      data = data,
-      A_column = cfscore$treatment_column,
-      CF_treatment = cfscore$cf_treatment,
-      cfscore$time_horizon
-    )
-  }
-  cfscore$predictions <- predictions
+    model <- make_list_if_not_list(model)
 
+    cfscore$predictions <- lapply(
+      X = model,
+      FUN = function(x) {
+        predict_CF(
+          model = x,
+          data = data,
+          A_column = cfscore$treatment_column,
+          CF_treatment = cfscore$cf_treatment,
+          cfscore$time_horizon
+        )
+      }
+    )
+  } else {
+    cfscore$predictions <- make_list_if_not_list(predictions)
+  }
   # get iptw
   cfscore$ipt$method = "weights manually specified"
   if (!missing(treatment_formula)) {
@@ -89,65 +96,70 @@ CFscore <- function(
     cfscore$ipc$weights <- ipcw_weights
   }
 
-  # compute metrics
+  # compute metrics while sapplying over each model
   if (cfscore$outcome_type == "survival") {
     for (m in metrics) {
-      cfscore$score[[m]] <- cf_metric(
-        m,
-        obs_outcome = cfscore$status_at_horizon,
-        obs_trt = cfscore$observed_treatment,
-        cf_pred = cfscore$predictions,
-        cf_trt = cfscore$cf_treatment,
-        ipw = cfscore$ipt$weights * cfscore$ipc$weights
+      cfscore$score[[m]] <- sapply(
+        X = cfscore$predictions,
+        FUN = function(x) {
+          cf_metric(
+            m,
+            obs_outcome = cfscore$status_at_horizon,
+            obs_trt = cfscore$observed_treatment,
+            cf_pred = x,
+            cf_trt = cfscore$cf_treatment,
+            ipw = cfscore$ipt$weights * cfscore$ipc$weights
+          )
+        }
       )
     }
   } else {
     for (m in metrics) {
-      cfscore$score[[m]] <- cf_metric(
-        m,
-        obs_outcome = cfscore$outcome,
-        obs_trt = cfscore$observed_treatment,
-        cf_pred = cfscore$predictions,
-        cf_trt = cfscore$cf_treatment,
-        ipw = cfscore$ipt$weights
+      cfscore$score[[m]] <- sapply(
+        X = cfscore$predictions,
+        FUN = function(x) {
+          cf_metric(
+            m,
+            obs_outcome = cfscore$outcome,
+            obs_trt = cfscore$observed_treatment,
+            cf_pred = x,
+            cf_trt = cfscore$cf_treatment,
+            ipw = cfscore$ipt$weights
+          )
+        }
       )
     }
   }
 
   if (bootstrap == TRUE) {
-    lapply(
-      X = as.list(1:bootstrap_iterations),
-      FUN = function(x) {
+    cfscore$bootstrap_iterations <- bootstrap_iterations
 
-      }
-    )
   }
 
   return(cfscore)
 }
 
 
-#
-# name_unnamed_list <- function(x) {
-#   # give names, if not named
-#   sapply(
-#     1:length(x),
-#     function(i)
-#
-#       if (is.null(names(x)[i]) || names(x)[i] == "") {
-#         paste0("model.", i)
-#       } else {
-#         names(x[i])
-#       }
-#   )
-# }
-#
-# make_list_if_not_list <- function(x) {
-#   if (!("list" %in% class(x)))
-#     x <- list(x)
-#   names(x) <- name_unnamed_list(x)
-#   x
-# }
+name_unnamed_list <- function(x) {
+  # give names, if not named
+  sapply(
+    1:length(x),
+    function(i)
+
+      if (is.null(names(x)[i]) || names(x)[i] == "") {
+        paste0("model.", i)
+      } else {
+        names(x[i])
+      }
+  )
+}
+
+make_list_if_not_list <- function(x) {
+  if (!("list" %in% class(x)))
+    x <- list(x)
+  names(x) <- name_unnamed_list(x)
+  x
+}
 
 
 
@@ -185,28 +197,6 @@ CFscore <- function(
 #' @export
 #'
 #' @examples
-#' simulate_data <- function(n) {
-#'   df <- data.frame(id = 1:n)
-#'   df$L <- rnorm(n)
-#'   df$A <- rbinom(n, 1, plogis(df$L))
-#'   df$P <- rnorm(n)
-#'   df$Y <- rbinom(n, 1, plogis(0.5 + df$L + 1.25 * df$P - 0.6*df$A))
-#'   return(df)
-#' }
-#'
-#' set.seed(123)
-#' df_dev <- simulate_data(5000)
-#' df_val <- simulate_data(4000)
-#'
-#' naive_model <- glm(Y ~ A + P, family = "binomial", data = df_dev)
-#'
-#' propensity_model <- glm(A ~ L, family = "binomial", df_dev)
-#' prop_score <- predict(propensity_model, type = "response")
-#' prob_trt <- ifelse(df_dev$A == 1, prop_score, 1 - prop_score)
-#' ipw <- 1 / prob_trt
-#'
-#' causal_model <- glm(Y ~ A + P, family = "binomial", data = df_dev,
-#'                    weights = ipw)
 #'
 #' CFscore(
 #'   validation_data = df_val,

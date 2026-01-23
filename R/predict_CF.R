@@ -13,7 +13,7 @@ predict_CF <- function(model, data, A_column, CF_treatment, time_horizon) {
 
 
 predict_glm <- function(model, data) {
-  stats::predict(model, newdata = data, type = "response")
+  unname(stats::predict(model, newdata = data, type = "response"))
 }
 
 

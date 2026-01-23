@@ -1,3 +1,13 @@
+bootstrap <- function(data, cfscore) {
+  bs_sample <- sample(nrow(data), size = nrow(data), replace = T)
+  bs_iptw <- ipt_weights(data, cfscore$propensity_formula)
+
+
+}
+
+
+
+
 
 bootstrap_iteration <- function(data, propensity_formula, predictions,
                                 Y, A, treatment_of_interest, metrics) {
