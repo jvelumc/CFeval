@@ -56,7 +56,20 @@ bootstrap <- function(data, cfscore) {
   })
   names(transposed) <- cfscore$metrics
 
-  transposed
+  # # summarize
+  conf.int <- lapply(transposed, function(m) {
+    CI <- lapply(names(cfscore$predictions), function(p) {
+      ci(m[[p]], cover = 0.95)
+    })
+    names(CI) <- names(cfscore$predictions)
+    CI
+  })
+
+
+  list(
+    results = conf.int,
+    raw = transposed
+  )
 }
 
 
@@ -74,9 +87,8 @@ lapply_progress <- function(x, FUN, task_description) {
   return(result)
 }
 
-#
-# ci <- function(values, cover = 0.95) {
-#   lower <- (1-cover) / 2
-#   upper <- 1 - lower
-#   stats::quantile(values, probs = c(lower, upper))
-# }
+ci <- function(values, cover = 0.95) {
+  lower <- (1-cover) / 2
+  upper <- 1 - lower
+  stats::quantile(values, probs = c(lower, upper))
+}

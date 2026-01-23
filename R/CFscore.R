@@ -94,7 +94,7 @@ CFscore <- function(object, data, outcome_formula, treatment_formula,
 
   if (bootstrap != 0) {
     cfscore$bootstrap_iterations <- bootstrap
-    cfscore$bootstrap_results <- bootstrap(data, cfscore)
+    cfscore$bootstrap <- bootstrap(data, cfscore)
   }
   return(cfscore)
 

@@ -17,13 +17,13 @@ cfscore <- CFscore(
   outcome_formula = Y ~ 1,
   treatment_formula = A ~ L,
   treatment_of_interest = 1,
-  bootstrap = 5
+  bootstrap = 200
 )
 
+cfscore$bootstrap
 
-cfscore$bootstrap_results
 
-
+lapply(cfscore$bootstrap_results, function(m))
 
 
 # bootstrap iteration > metric > models
