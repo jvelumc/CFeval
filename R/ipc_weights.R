@@ -7,7 +7,7 @@ ipc_weights <- function(data, formula, type, time_horizon) {
   mf <- model.frame(formula, data)
   y <- model.response(mf)
 
-  if ("cfscore_time" %in% mf || "cfscore_status" %in% mf) {
+  if ("cfscore_time" %in% colnames(mf) || "cfscore_status" %in% colnames(mf)) {
     stop("Please don't use the variable names cfscore_time or cfscore_status in your data")
   }
 
@@ -27,7 +27,7 @@ ipc_weights <- function(data, formula, type, time_horizon) {
       )
     },
     cox = {
-      fit <- coxph(flipped_form, data = mf)
+      fit <- coxph(flipped_form, data = mf, model = TRUE, x = TRUE)
       list(
         model = fit,
         probability = 1-predict_cox(fit, mf, pmin(time_horizon, mf$cfscore_time))

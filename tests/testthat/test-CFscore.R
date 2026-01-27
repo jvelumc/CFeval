@@ -147,7 +147,8 @@ test_that("CFscore metrics equal to unobserved CF metrics, surv, uncensored", {
     outcome_formula = Surv(time, status) ~ 1,
     treatment_formula = A ~ L,
     treatment_of_interest = 0,
-    time_horizon = horizon
+    time_horizon = horizon,
+    cens.model = "KM"
   )
 
   time0_predicted <- predict_CF(model, data, "A", 0, horizon)
@@ -193,17 +194,32 @@ test_that("CFscore metrics equal to unobserved CF metrics, surv, censor at T", {
     data = data
   ) # naive model, i.e. not adjusting for confounding
 
-  cfscore <- CFscore(
+  cfscore_km <- CFscore(
     data = data,
     object = model,
     outcome_formula = Surv(time, status) ~ 1,
     treatment_formula = A ~ L,
     treatment_of_interest = 0,
-    time_horizon = horizon
+    time_horizon = horizon,
+    cens.model = "KM"
+  )
+
+  cfscore_cox <- CFscore(
+    data = data,
+    object = model,
+    outcome_formula = Surv(time, status) ~ 1,
+    treatment_formula = A ~ L,
+    treatment_of_interest = 0,
+    time_horizon = horizon,
+    cens.model = "cox"
   )
 
   expect_equal(
-    cfscore$ipc$weights,
+    cfscore_km$ipc$weights,
+    rep(1, n)
+  )
+  expect_equal(
+    cfscore_cox$ipc$weights,
     rep(1, n)
   )
 
@@ -217,9 +233,13 @@ test_that("CFscore metrics equal to unobserved CF metrics, surv, censor at T", {
   )
   score$oe <- mean(data$time0 <= horizon)/mean(time0_predicted)
 
-  expect_equal(unname(cfscore$score$auc), score$AUC$score$AUC, tolerance = 0.01)
-  expect_equal(unname(cfscore$score$brier), score$Brier$score$Brier, tolerance = 0.01)
-  expect_equal(unname(cfscore$score$oeratio), score$oe, tolerance = 0.01)
+  expect_equal(unname(cfscore_km$score$auc), score$AUC$score$AUC, tolerance = 0.01)
+  expect_equal(unname(cfscore_km$score$brier), score$Brier$score$Brier, tolerance = 0.01)
+  expect_equal(unname(cfscore_km$score$oeratio), score$oe, tolerance = 0.01)
+
+  expect_equal(unname(cfscore_cox$score$auc), score$AUC$score$AUC, tolerance = 0.01)
+  expect_equal(unname(cfscore_cox$score$brier), score$Brier$score$Brier, tolerance = 0.01)
+  expect_equal(unname(cfscore_cox$score$oeratio), score$oe, tolerance = 0.01)
 })
 
 test_that("CFscore metrics equal to unobserved CF metrics, surv, KM censor", {
