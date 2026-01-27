@@ -43,7 +43,7 @@ bootstrap <- function(data, cfscore) {
     },
     "bootstrapping"
   )
-
+  return(b)
   # transpose results
   # (iteration > metric > model) -> (metric > model > iteration)
 

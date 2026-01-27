@@ -7,9 +7,11 @@ pp <- function(...) {
 
 #' @export
 print.CFscore <- function(x, ...) {
+  assumptions(x)
+  numeric_metrics <- x$metrics[x$metrics != "calplot"]
 
   if (x$bootstrap_iterations != 0) {
-    for (metric in x$metrics) {
+    for (metric in numeric_metrics) {
       cat("\n", metric, "\n\n", sep = "")
       tab <- data.frame(model = names(x$predictions))
       tab[[metric]] <- x$score[[metric]]
@@ -20,7 +22,7 @@ print.CFscore <- function(x, ...) {
   } else {
     cat("\n")
     tab <- data.frame(model = names(x$predictions))
-    for (metric in x$metrics) {
+    for (metric in numeric_metrics) {
       tab[[metric]] <- x$score[[metric]]
     }
     print(tab, digits = 3, row.names = FALSE)
@@ -66,6 +68,15 @@ print.CFscore <- function(x, ...) {
   # if ("oeplot" %in% x$metrics) {
   #   plot(x)
   # }
+
+
+#' @export
+plot.calibration_plot <- function(x, ...) {
+  plot(x$pred, x$obs, type = "o", xlim = c(0,1), ylim = c(0,1),
+       xlab = "Risk", ylab = "CF observed",
+       main = "CF Calibration plot")
+  graphics::abline(0, 1, col = "red")
+}
 
 
 #' @export

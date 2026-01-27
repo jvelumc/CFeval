@@ -1,7 +1,8 @@
 library(survival)
 
 CFscore <- function(object, data, outcome_formula, treatment_formula,
-                    treatment_of_interest, metrics = c("auc", "brier", "oeratio"),
+                    treatment_of_interest,
+                    metrics = c("auc", "brier", "oeratio", "calplot"),
                     time_horizon, cens.model = "cox",
                     bootstrap = 0, iptw, ipcw, quiet = FALSE) {
 

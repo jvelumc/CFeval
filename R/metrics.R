@@ -4,6 +4,7 @@ cf_metric <- function(metric, ...) {
     "brier" = cf_brier(...),
     "auc" = cf_auc(...),
     "oeratio" = cf_oeratio(...),
+    "calplot" = cf_calplot(...),
     stop(metric, " not implemented")
   )
 }
@@ -94,4 +95,32 @@ cf_oeratio_e_from_pp <- function(obs_outcome, obs_trt, cf_pred, cf_trt, ipw) {
   )
 
   return(observed/expected)
+}
+
+# # calibration plot
+
+cf_calplot <- function(obs_outcome, obs_trt, cf_pred, cf_trt, ipw) {
+
+  n_breaks <- 8
+
+  cal <- data.frame(obs_outcome, obs_trt, cf_pred, ipw)
+  cal <- cal[order(cf_pred), ]
+  cal$group <- cut(cal$cf_pred, breaks = n_breaks, label = F)
+  mean_preds <- tapply(
+    X = cal$cf_pred,
+    INDEX = cal$group,
+    FUN = mean
+  )
+
+  cal_pseudo <- cal[cal$obs_trt == cf_trt, ]
+
+  mean_obs <- tapply(
+    X = cal_pseudo,
+    INDEX = cal_pseudo$group,
+    FUN = function(x) stats::weighted.mean(x$obs_outcome, x$ipw)
+  )
+
+  calplot <- list(pred = mean_preds, obs = mean_obs)
+  class(calplot) <- "calibration_plot"
+  calplot
 }
