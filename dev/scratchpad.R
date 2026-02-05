@@ -28,11 +28,11 @@ print_model(model)
 
 cfscore <- CFscore(
   data = data,
-  object = list(model, model2),
+  object = list(model, model2,model, model2,model, model2,model, model2,model, model2),
   outcome_formula = Y ~ 1,
   treatment_formula = A ~ L,
   treatment_of_interest = 0,
-  bootstrap = 10,
+  bootstrap = 0,
   metrics = c("oeratio", "calplot","auc")
 )
 

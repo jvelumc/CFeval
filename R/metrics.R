@@ -122,6 +122,6 @@ cf_calplot <- function(obs_outcome, obs_trt, cf_pred, cf_trt, ipw) {
   )
 
   calplot <- list(pred = unname(mean_preds), obs = unname(mean_obs))
-  class(calplot) <- "calibration_plot"
+  # class(calplot) <- "calibration_plot"
   calplot
 }

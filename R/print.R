@@ -29,70 +29,90 @@ print.CFscore <- function(x, ...) {
   }
 }
 
-  # if (!x$quiet) {
-  #   assumptions(x)
-  # }
-  #
-  # numeric_metrics <- x$metrics[x$metrics != "oeplot"]
-  #
-  # # if we bootstrapped, make 1 table for each metric
-  # # if not, make 1 table for all
-  # if (x$bootstrap == TRUE) {
-  #   for (metric in numeric_metrics) {
-  #     cat("\n", metric, "\n\n", sep = "")
-  #
-  #     # build result table
-  #     tab <- data.frame(model = x$models)
-  #     tab[[metric]] <- unlist(x$results[[metric]][x$models])
-  #     tab$lower <- sapply(
-  #       x$models,
-  #       function(m)
-  #         quantile(x$results_bootstrap[[metric]][[m]], probs = 0.025)
-  #     )
-  #     tab$upper <- sapply(
-  #       x$models,
-  #       function(m)
-  #         quantile(x$results_bootstrap[[metric]][[m]], probs = 0.975)
-  #     )
-  #     print(tab, digits = 3, row.names = FALSE)
-  #   }
-  # } else {
-  #   cat("\n")
-  #   tab <- data.frame(model = x$models)
-  #   for (metric in numeric_metrics) {
-  #     tab[[metric]] <- unlist(x$results[[metric]][x$models])
-  #   }
-  #   print(tab, digits = 3, row.names = FALSE)
-  # }
-  #
-  # if ("oeplot" %in% x$metrics) {
-  #   plot(x)
-  # }
+# if (!x$quiet) {
+#   assumptions(x)
+# }
+#
+# numeric_metrics <- x$metrics[x$metrics != "oeplot"]
+#
+# # if we bootstrapped, make 1 table for each metric
+# # if not, make 1 table for all
+# if (x$bootstrap == TRUE) {
+#   for (metric in numeric_metrics) {
+#     cat("\n", metric, "\n\n", sep = "")
+#
+#     # build result table
+#     tab <- data.frame(model = x$models)
+#     tab[[metric]] <- unlist(x$results[[metric]][x$models])
+#     tab$lower <- sapply(
+#       x$models,
+#       function(m)
+#         quantile(x$results_bootstrap[[metric]][[m]], probs = 0.025)
+#     )
+#     tab$upper <- sapply(
+#       x$models,
+#       function(m)
+#         quantile(x$results_bootstrap[[metric]][[m]], probs = 0.975)
+#     )
+#     print(tab, digits = 3, row.names = FALSE)
+#   }
+# } else {
+#   cat("\n")
+#   tab <- data.frame(model = x$models)
+#   for (metric in numeric_metrics) {
+#     tab[[metric]] <- unlist(x$results[[metric]][x$models])
+#   }
+#   print(tab, digits = 3, row.names = FALSE)
+# }
+#
+# if ("oeplot" %in% x$metrics) {
+#   plot(x)
+# }
 
 
 #' @export
-plot.calibration_plot <- function(x, ...) {
-  plot(x$pred, x$obs, type = "o", xlim = c(0,1), ylim = c(0,1),
-       xlab = "Risk", ylab = "CF observed",
-       main = "CF Calibration plot")
-  graphics::abline(0, 1, col = "red")
-}
+plot.CFscore <- function(x, ...) {
+  # this plotting function should ideally be more customizable,
+  # i.e. show/hide legend, colors, xlim, ylim, ....
 
 
-#' @export
-plot.cfscore <- function(x, ...) {
-  arg <- list(...)
-  if (!("model" %in% names(arg))) {
-    models <- x$models
+  # if no bootstrap, draw all calibration plots in 1
+  # if bootstrap, each model gets on calibration plot
+
+  models <- names(x$predictions)
+
+  if (x$bootstrap_iterations == 0) {
+    plot(1, type = "n",
+         xlim = c(0, 1), ylim = c(0, 1),
+         xlab = "Risk", ylab = "CF observed",
+         main = "CF Calibration plot")
+    graphics::abline(0, 1, col = "black")
+    colors <- palette.colors(n = length(models) + 1, recycle = TRUE, alpha = 0.8)[-1]
+    for (i in seq_along(models)) {
+      lines(
+        x = x$score$calplot[["pred", models[i]]],
+        y = x$score$calplot[["obs", models[i]]],
+        type = "o",
+        col = colors[i]
+      )
+    }
+    legend("topleft",
+           legend = models,
+           col    = colors,
+           lty    = 1,
+           lwd    = 1,
+           pch    = 1,
+           bty    = "n")
+  } else {
+    for (m in models) {
+
+    }
   }
-  else {
-    models <- arg$models
-  }
-  for (m in models) {
-    cat("model: ", m, "\n")
-    x$results$oeplot[[m]]()
-  }
+
+
+
 }
+
 
 assumptions <- function(x) {
 
