@@ -24,7 +24,6 @@ CFscore <- function(object, data, outcome_formula, treatment_formula,
   # more input checking, move to seperate function
 
   cfscore <- list()
-  class(cfscore) <- "CFscore"
 
   # get the observed outcome
   cfscore$outcome <- extract_lhs(data, outcome_formula)
@@ -98,6 +97,13 @@ CFscore <- function(object, data, outcome_formula, treatment_formula,
   }
 
   cfscore$quiet <- quiet
+
+
+  # rearrange such that score is the first entry of the list
+  front <- if (bootstrap != 0) c("score", "bootstrap") else c("score")
+  cfscore <- cfscore[c(front, setdiff(names(cfscore), front))]
+  class(cfscore) <- "CFscore"
+
   return(cfscore)
 }
 

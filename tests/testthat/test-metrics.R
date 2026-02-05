@@ -203,7 +203,7 @@ test_that(
         cf_trt = 0,
         ipw = rep(1, nrow(df_val))
       ),
-      oe_e_pp = cf_oeratio_e_from_pp(
+      oe_e_pp = cf_oeratio_pp(
         obs_outcome = df_val$Y0,
         obs_trt = rep(0, nrow(df_val)),
         cf_pred = pred0,
@@ -233,7 +233,7 @@ test_that(
         cf_trt = 0,
         ipw = df_val$ipw
       ),
-      oe_e_pp = cf_oeratio_e_from_pp(
+      oe_e_pp = cf_oeratio_pp(
         obs_outcome = df_val$Y,
         obs_trt = df_val$A,
         cf_pred = pred0,

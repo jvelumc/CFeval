@@ -37,7 +37,9 @@ cfscore <- CFscore(
 )
 
 
-cfscore$bootstrap
+cfscore
+
+
 
 
 
