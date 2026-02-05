@@ -121,7 +121,7 @@ cf_calplot <- function(obs_outcome, obs_trt, cf_pred, cf_trt, ipw) {
     FUN = function(x) stats::weighted.mean(x$obs_outcome, x$ipw)
   )
 
-  calplot <- list(pred = mean_preds, obs = mean_obs)
+  calplot <- list(pred = unname(mean_preds), obs = unname(mean_obs))
   class(calplot) <- "calibration_plot"
   calplot
 }

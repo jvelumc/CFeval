@@ -43,13 +43,24 @@ bootstrap <- function(data, cfscore) {
     },
     "bootstrapping"
   )
-  return(b)
   # transpose results
   # (iteration > metric > model) -> (metric > model > iteration)
 
+  # for calibration plot:
+  # (iteration > metric > [pred/obs, model]) ->
+  # (metric > model > iteration > list(pred = , obs = ))
   transposed <- lapply(cfscore$metrics, function(m) {
     P <- lapply(names(cfscore$predictions), function(p) {
-      sapply(b, function(i) i[[m]][[p]])
+      if (m != "calplot") { # 1 numeric result, simple to combine & transpose
+        sapply(b, function(i) i[[m]][[p]])
+      } else { # calibration plot, consisting of 2 vectors of preds & obs
+        lapply(b, function(i) {
+          list(
+            pred = i[[m]][["pred", p]],
+            obs = i[[m]][["obs", p]]
+          )
+        })
+      }
     })
     names(P) <- names(cfscore$predictions)
     P
@@ -57,14 +68,18 @@ bootstrap <- function(data, cfscore) {
   names(transposed) <- cfscore$metrics
 
   # # summarize
-  conf.int <- lapply(transposed, function(m) {
+  conf.int <- lapply(cfscore$metrics, function(m) {
     CI <- lapply(names(cfscore$predictions), function(p) {
-      ci(m[[p]], cover = 0.95)
+      if (m != "calplot") {
+        return(ci(transposed[[m]][[p]], cover = 0.95))
+      } else {
+        return(NA)
+      }
     })
     names(CI) <- names(cfscore$predictions)
     CI
   })
-
+  names(conf.int) <- cfscore$metrics
 
   list(
     results = conf.int,
