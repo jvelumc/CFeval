@@ -126,7 +126,7 @@ test_that(
     # )
 
     expect_equal(
-      cf_oeratio_e_from_pp(
+      cf_oeratio_pp(
         obs_outcome = df_toy$Y,
         obs_trt = df_toy$A,
         cf_pred = df_toy$pred,

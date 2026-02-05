@@ -4,6 +4,7 @@ cf_metric <- function(metric, ...) {
     "brier" = cf_brier(...),
     "auc" = cf_auc(...),
     "oeratio" = cf_oeratio(...),
+    "oeratio_pp" = cf_oeratio_pp(...),
     "calplot" = cf_calplot(...),
     stop(metric, " not implemented")
   )
@@ -79,7 +80,7 @@ cf_oeratio <- function(obs_outcome, obs_trt, cf_pred, cf_trt, ipw) {
   return(observed/expected)
 }
 
-cf_oeratio_e_from_pp <- function(obs_outcome, obs_trt, cf_pred, cf_trt, ipw) {
+cf_oeratio_pp <- function(obs_outcome, obs_trt, cf_pred, cf_trt, ipw) {
 
   # indices of persons that follow the trt of interest
   pseudo_i <- obs_trt == cf_trt
