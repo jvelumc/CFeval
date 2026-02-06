@@ -44,29 +44,29 @@ plot.CFscore <- function(x, ...) {
 
   models <- names(x$predictions)
 
-  if (x$bootstrap_iterations == 0) {
-    plot(1, type = "n",
-         xlim = c(0, 1), ylim = c(0, 1),
-         xlab = "Risk", ylab = "CF observed",
-         main = "CF Calibration plot")
-    graphics::abline(0, 1, col = "black")
-    colors <- palette.colors(n = length(models) + 1, recycle = TRUE)[-1]
-    for (i in seq_along(models)) {
-      lines(
-        x = x$score$calplot[["pred", models[i]]],
-        y = x$score$calplot[["obs", models[i]]],
-        type = "o",
-        col = colors[i]
-      )
-    }
-    legend("topleft",
-           legend = models,
-           col    = colors,
-           lty    = 1,
-           lwd    = 1,
-           pch    = 1,
-           bty    = "n")
-  } else {
+
+  plot(1, type = "n",
+       xlim = c(0, 1), ylim = c(0, 1),
+       xlab = "Risk", ylab = "CF observed",
+       main = "CF Calibration plot")
+  graphics::abline(0, 1, col = "black")
+  colors <- palette.colors(n = length(models) + 1, recycle = TRUE)[-1]
+  for (i in seq_along(models)) {
+    lines(
+      x = x$score$calplot[["pred", models[i]]],
+      y = x$score$calplot[["obs", models[i]]],
+      type = "o",
+      col = colors[i]
+    )
+  }
+  legend("topleft",
+         legend = models,
+         col    = colors,
+         lty    = 1,
+         lwd    = 1,
+         pch    = 1,
+         bty    = "n")
+  if (x$bootstrap_iterations > 0) {
     for (m in models) {
       plot(1, type = "n",
            xlim = c(0, 1), ylim = c(0, 1),

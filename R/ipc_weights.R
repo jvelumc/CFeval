@@ -1,5 +1,8 @@
 ipc_weights <- function(data, formula, type, time_horizon) {
 
+  formula <- Surv(time, status) ~ 1
+  type <- "KM"
+
 
   if (type == "KM")
     stopifnot(rhs_is_one(formula))
@@ -19,6 +22,7 @@ ipc_weights <- function(data, formula, type, time_horizon) {
   p_uncensored <- switch(
     type,
     KM = {
+      # fit <- prodlim::prodlim(formula, data = data, reverse = FALSE)
       fit <- survival::survfit(flipped_form, data = mf)
       p_not_censor <- stepfun(fit$time, c(1, fit$surv))
       list(

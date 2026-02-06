@@ -2,8 +2,9 @@ library(survival)
 
 CFscore <- function(object, data, outcome_formula, treatment_formula,
                     treatment_of_interest,
-                    metrics = c("auc", "brier", "oeratio", "calplot"),
+                    metrics = c("auc", "brier", "oeratio", "oeratio_pp", "calplot"),
                     time_horizon, cens.model = "cox",
+                    stable_iptw = FALSE, stable_ipcw = FALSE,
                     bootstrap = 0, iptw, ipcw, quiet = FALSE) {
 
   check_missing(object)
@@ -72,6 +73,13 @@ CFscore <- function(object, data, outcome_formula, treatment_formula,
     ipt <- ipt_weights(data, treatment_formula)
     iptw <- ipt$weights
     cfscore$ipt$model <- ipt$model
+
+    if (stable_iptw == TRUE) {
+      stable_treatment_formula <- update.formula(treatment_formula, . ~ 1)
+      sipt <- ipt_weights(data, stable_treatment_formula)
+      iptw <- 1/sipt$weights * iptw
+      cfscore$ipt$stable_model <- sipt$model
+    }
   }
   cfscore$ipt$weights <- iptw
 
@@ -100,7 +108,7 @@ CFscore <- function(object, data, outcome_formula, treatment_formula,
 
 
   # rearrange such that score is the first entry of the list
-  front <- if (bootstrap != 0) c("score", "bootstrap") else c("score")
+  front <- c("score")
   cfscore <- cfscore[c(front, setdiff(names(cfscore), front))]
   class(cfscore) <- "CFscore"
 

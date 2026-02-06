@@ -62,6 +62,11 @@ test_that("ipc ties", {
     status = c(1, 0, 1, 1)
   )
 
+  data <- data.frame(
+    time = c(1,2,2,3),
+    status = c(1, 1, 0, 1)
+  )
+
   expect_equal(
     ipc_weights(data, Surv(time, status) ~ 1, type = "KM", time_horizon = 1.9)$weights,
     c(1,1,1,1)

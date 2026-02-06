@@ -1,47 +1,71 @@
 set.seed(1)
 n <- 5000
 data <- data.frame(
-  L = rnorm(n, mean = 0),
-  P = rnorm(n, mean = 0)
+  L1 = rnorm(n, mean = 0),
+  L2 = rbinom(n, 1, 0.5),
+  P1 = rnorm(n, mean = 0),
+  P2 = rnorm(n, mean = 0)
 )
-data$A <- rbinom(n, 1, plogis(0.2+0.5*data$L))
-data$Y0 <- rbinom(n, 1, plogis(0.1 + 0.3*data$L + 0.4*data$P))
-data$Y1 <- rbinom(n, 1, plogis(0.1 + 0.3*data$L + 0.4*data$P - 0.4))
+data$A <- rbinom(n, 1, plogis(0.9*data$L1 + 0.4*data$L2))
+data$Y0 <- rbinom(n, 1, plogis(0.1 + 0.9*data$L1 + 0.6*data$L2 + 0.4*data$P1 + 0.3*data$P2))
+data$Y1 <- rbinom(n, 1, plogis(0.1 + 0.9*data$L2 + 0.6*data$L2 + 0.4*data$P1 + 0.3*data$P2 - 0.8))
 data$Y <- ifelse(data$A == 1, data$Y1, data$Y0)
 
-model <- suppressWarnings(
+summary(data$A)
+
+model0 <- suppressWarnings(
   glm(
-    Y ~ A + P,
+    Y ~ A + P1,
+    family = "binomial",
+    data = data
+  )
+)
+
+model1 <- suppressWarnings(
+  glm(
+    Y ~ A + P1 + P2,
     family = "binomial",
     data = data
   )
 )
 model2 <- suppressWarnings(
   glm(
-    Y ~ A + P + L,
+    Y ~ A + P1 + P2,
     family = "binomial",
-    data = data
+    data = data,
+    weights = ipt_weights(data, A ~ L1 + L2)$weights
   )
 )
 
 print_model(model)
+print_model(model2)
 
 cfscore <- CFscore(
   data = data,
+  object = list(model0, model1, model2),
+  outcome_formula = Y ~ 1,
+  treatment_formula = A ~ L1 + L2,
+  treatment_of_interest = 0
+  # metrics = c("oeratio", "calplot","auc"),
+  # bootstrap = 20
+)
+cfscore
+cfscore$ipt$weights |> summary()
+
+cfscore_s <- CFscore(
+  data = data,
   object = list(model, model2),
   outcome_formula = Y ~ 1,
-  treatment_formula = A ~ L,
+  treatment_formula = A ~ L1 + L2,
   treatment_of_interest = 0,
-  bootstrap = 10,
-  metrics = c("oeratio", "calplot","auc")
+  # metrics = c("oeratio", "calplot","auc"),
+  stable_iptw = TRUE
+  # bootstrap = 100
 )
 
-
-cfscore |> plot()
-
-
-
-
+cfscore_s$ipt$weights |> summary()
+cfscore$score$auc
+cfscore_s
 
 plot(x = cfscore$bootstrap[[1]]$calplot[[1]],
      y = cfscore$bootstrap[[1]]$calplot[[2]],
