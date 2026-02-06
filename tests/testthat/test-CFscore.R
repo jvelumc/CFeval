@@ -564,3 +564,99 @@ test_that("results are in between lower & upper bootstrap, surv, cox censor", {
       cfscore$score$oeratio < cfscore$bootstrap$results$oeratio[[1]][2]
   )
 })
+
+# null model
+test_that("null model binary outcome", {
+  set.seed(1)
+  n <- 100000
+  data <- data.frame(
+    L = rnorm(n, mean = 0),
+    P = rnorm(n, mean = 0)
+  )
+  data$A <- rbinom(n, 1, plogis(0.2+0.5*data$L))
+  data$Y0 <- rbinom(n, 1, plogis(0.1 + 0.3*data$L + 0.4*data$P))
+  data$Y1 <- rbinom(n, 1, plogis(0.1 + 0.3*data$L + 0.4*data$P - 0.4))
+  data$Y <- ifelse(data$A == 1, data$Y1, data$Y0)
+
+  model <- suppressWarnings(
+    glm(
+      Y ~ A + P,
+      family = "binomial",
+      data = data
+    )
+  )
+
+  nullmodel <- glm(Y0 ~ 1, data = data)
+
+  cfscore <- CFscore(model, data, Y ~ 1, A ~ L, 0,null.model = TRUE)
+  expect_equal(
+    unname(nullmodel$coefficients[1]),
+    cfscore$predictions$`null model`[[1]],
+    tolerance = 0.01
+  )
+})
+
+
+test_that("null model survival outcome", {
+  set.seed(1)
+  horizon <- 10
+  n <- 100000
+  data <- data.frame(
+    L = rnorm(n, mean = 0),
+    P = rnorm(n, mean = 0)
+  )
+  data$A <- rbinom(n, 1, plogis(0.2 + 0.5*data$L))
+
+  data$time0 <- simulate_time_to_event(n, 0.04, data$L + 0.5*data$P)
+  data$time1 <- simulate_time_to_event(n, 0.04, data$L + 0.5*data$P - 0.6)
+  data$censortime <- simulate_time_to_event(n, 0.04, 0.5*data$L + 0.6*data$P +
+                                              0.2*data$A)
+  data$time_uncensored <- ifelse(data$A == 1, data$time1, data$time0)
+
+  data$status1 <- ifelse(data$time1 <= data$censortime, TRUE, FALSE)
+  data$obs_time1 <- ifelse(data$status1 == TRUE, data$time1, data$censortime)
+
+  data$status_uncensored <- 1
+
+  data$status <- ifelse(data$time_uncensored <= data$censortime, TRUE, FALSE)
+  data$time <- ifelse(data$status == TRUE,
+                      data$time_uncensored,
+                      data$censortime)
+
+
+  model <- coxph(
+    formula = Surv(time, status) ~ P + A,
+    x = TRUE,
+    data = data
+  )
+  nullmodel <- survfit(Surv(obs_time1, status1) ~ 1, data)
+
+  cfscore <- CFscore(
+    data = data,
+    object = model,
+    outcome_formula = Surv(time, status) ~ 1,
+    treatment_formula = A ~ L,
+    treatment_of_interest = 1,
+    metrics = c(),
+    cens.model = "cox",
+    time_horizon = horizon,
+    null.model = TRUE
+  )
+
+  expect_equal(
+    cfscore$predictions$`null model`[[1]],
+    1 - summary(nullmodel, times = horizon)$surv,
+    tolerance = 0.01
+  )
+
+  score <- riskRegression::Score(list(model), formula = Surv(time1, status_uncensored) ~ 1,
+                        data, null.model = TRUE)
+  score
+})
+
+
+
+
+
+
+

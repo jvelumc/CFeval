@@ -107,6 +107,8 @@ CFscore <- function(object, data, outcome_formula, treatment_formula,
       )
       null_preds <- predict.lm(null_model, newdata = data)
     } else { # survival outcome
+      censor_ids <- cfscore$outcome
+
       null_model <- survfit(
         cfscore$outcome[pseudo_ids] ~ 1,
         weights = cfscore$ipt$weights[pseudo_ids]
