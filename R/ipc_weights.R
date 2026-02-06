@@ -1,8 +1,5 @@
 ipc_weights <- function(data, formula, type, time_horizon) {
 
-  formula <- Surv(time, status) ~ 1
-  type <- "KM"
-
 
   if (type == "KM")
     stopifnot(rhs_is_one(formula))

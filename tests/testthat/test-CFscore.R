@@ -19,7 +19,7 @@ test_that("supplying (list of) model or predictions equivalent", {
       object = model1,
       outcome_formula = Y ~ 1,
       treatment_formula = A ~ L,
-      treatment_of_interest = 0
+      treatment_of_interest = 0,
     ),
     CFscore(
       data = data,
@@ -99,7 +99,8 @@ test_that("CFscore metrics equal to unobserved CF metrics, binary outcome", {
     object = model,
     outcome_formula = Y ~ 1,
     treatment_formula = A ~ L,
-    treatment_of_interest = 0
+    treatment_of_interest = 0,
+    null.model = FALSE
   )
 
   Y0_predicted <- predict_CF(model, data, "A", 0)
@@ -148,7 +149,8 @@ test_that("CFscore metrics equal to unobserved CF metrics, surv, uncensored", {
     treatment_formula = A ~ L,
     treatment_of_interest = 0,
     time_horizon = horizon,
-    cens.model = "KM"
+    cens.model = "KM",
+    null.model = FALSE
   )
 
   time0_predicted <- predict_CF(model, data, "A", 0, horizon)
@@ -201,7 +203,8 @@ test_that("CFscore metrics equal to unobserved CF metrics, surv, censor at T", {
     treatment_formula = A ~ L,
     treatment_of_interest = 0,
     time_horizon = horizon,
-    cens.model = "KM"
+    cens.model = "KM",
+    null.model = FALSE
   )
 
   cfscore_cox <- CFscore(
@@ -211,7 +214,8 @@ test_that("CFscore metrics equal to unobserved CF metrics, surv, censor at T", {
     treatment_formula = A ~ L,
     treatment_of_interest = 0,
     time_horizon = horizon,
-    cens.model = "cox"
+    cens.model = "cox",
+    null.model = FALSE
   )
 
   expect_equal(
@@ -279,7 +283,8 @@ test_that("CFscore metrics equal to unobserved CF metrics, surv, KM censor", {
     treatment_formula = A ~ L,
     treatment_of_interest = 0,
     time_horizon = horizon,
-    cens.model = "KM"
+    cens.model = "KM",
+    null.model = FALSE
   )
 
   time0_predicted <- predict_CF(model, data, "A", 0, horizon)
@@ -304,7 +309,8 @@ test_that("CFscore metrics equal to unobserved CF metrics, surv, KM censor", {
     treatment_formula = A ~ L,
     treatment_of_interest = 1,
     time_horizon = horizon,
-    cens.model = "KM"
+    cens.model = "KM",
+    null.model = FALSE
   )
 
   time1_predicted <- predict_CF(model, data, "A", 1, horizon)
@@ -360,7 +366,8 @@ test_that("CFscore metrics equal to unobserved CF metrics, surv, cox censor", {
     treatment_formula = A ~ L,
     treatment_of_interest = 0,
     time_horizon = horizon,
-    cens.model = "cox"
+    cens.model = "cox",
+    null.model = FALSE
   )
 
   time0_predicted <- predict_CF(model, data, "A", 0, horizon)
@@ -417,7 +424,8 @@ test_that("CFscore metrics equal to unobserved CF metrics, surv, KM censor, stab
     treatment_of_interest = 0,
     time_horizon = horizon,
     cens.model = "KM",
-    stable_iptw = TRUE
+    stable_iptw = TRUE,
+    null.model = FALSE
   )
 
   stable_min <- min(cfscore$ipt$weights)
@@ -431,7 +439,8 @@ test_that("CFscore metrics equal to unobserved CF metrics, surv, KM censor, stab
     treatment_of_interest = 0,
     time_horizon = horizon,
     cens.model = "KM",
-    stable_iptw = FALSE
+    stable_iptw = FALSE,
+    null.model = FALSE
   )
 
   unstable_min <- min(cfscore_unstable$ipt$weights)
@@ -485,7 +494,8 @@ test_that("results are in between lower & upper bootstrap", {
     outcome_formula = Y ~ 1,
     treatment_formula = A ~ L,
     treatment_of_interest = 0,
-    bootstrap = 200
+    bootstrap = 200,
+    null.model = FALSE
   )
 
   expect_true(
@@ -537,7 +547,8 @@ test_that("results are in between lower & upper bootstrap, surv, cox censor", {
     treatment_of_interest = 0,
     cens.model = "cox",
     time_horizon = horizon,
-    bootstrap = 100
+    bootstrap = 100,
+    null.model = FALSE
   )
 
   expect_true(
