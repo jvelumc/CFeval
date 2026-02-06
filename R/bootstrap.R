@@ -19,6 +19,14 @@ bootstrap_iteration <- function(data, cfscore) {
   )
   bs_cfscore$ipt$weights <- bs_ipt$weights
 
+  # are we using stabilized weights?
+  if (!is.null(cfscore$ipt$stable_model)) {
+    stable_treatment_formula <- update.formula(cfscore$ipt$propensity_formula, . ~ 1)
+    bs_sipt <- ipt_weights(data[bs_sample, ], stable_treatment_formula)
+    bs_cfscore$ipt$weights <- 1/bs_sipt$weights * bs_ipt$weights
+  }
+
+
   if (cfscore$outcome_type == "survival") {
     bs_ipc <- ipc_weights(
       data = data[bs_sample, ],
