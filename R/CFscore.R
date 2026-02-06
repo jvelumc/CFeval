@@ -4,7 +4,7 @@ CFscore <- function(object, data, outcome_formula, treatment_formula,
                     treatment_of_interest,
                     metrics = c("auc", "brier", "oeratio", "oeratio_pp", "calplot"),
                     time_horizon, cens.model = "cox",
-                    stable_iptw = FALSE, stable_ipcw = FALSE,
+                    stable_iptw = FALSE,
                     bootstrap = 0, iptw, ipcw, quiet = FALSE) {
 
   check_missing(object)
@@ -92,13 +92,6 @@ CFscore <- function(object, data, outcome_formula, treatment_formula,
       ipc <- ipc_weights(data, outcome_formula, cens.model, time_horizon)
       ipcw <- ipc$weights
       cfscore$ipc$model <- ipc$model
-
-      if (stable_ipcw == TRUE) {
-        stable_cens_formula <- update.formula(outcome_formula, . ~ 1)
-        sipc <- ipc_weights(data, stable_cens_formula, cens.model, time_horizon)
-        ipcw <- 1/sipc$weights * ipcw
-        cfscore$ipc$stable_model <- sipc$model
-      }
 
     }
     cfscore$ipc$weights <- ipcw

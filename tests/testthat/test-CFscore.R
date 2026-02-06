@@ -378,6 +378,86 @@ test_that("CFscore metrics equal to unobserved CF metrics, surv, cox censor", {
   expect_equal(unname(cfscore$score$oeratio), score$oe, tolerance = 0.01)
 })
 
+
+test_that("CFscore metrics equal to unobserved CF metrics, surv, KM censor, stable weights", {
+  set.seed(1)
+  horizon <- 10
+  n <- 100000
+  data <- data.frame(
+    L = rnorm(n, mean = 0),
+    P = rnorm(n, mean = 0)
+  )
+  data$A <- rbinom(n, 1, plogis(0.2 + 0.5*data$L))
+
+  data$time0 <- simulate_time_to_event(n, 0.04, data$L + 0.5*data$P)
+  data$time1 <- simulate_time_to_event(n, 0.04, data$L + 0.5*data$P - 0.6)
+  data$censortime <- simulate_time_to_event(n, 0.04, 0)
+  data$time_uncensored <- ifelse(data$A == 1, data$time1, data$time0)
+  data$status_uncensored <- 1
+
+  summary(data$time0)
+  summary(data$time1)
+  summary(data$censortime)
+
+  data$status <- ifelse(data$time_uncensored <= data$censortime, TRUE, FALSE)
+  data$time <- ifelse(data$status == TRUE,
+                      data$time_uncensored,
+                      data$censortime)
+
+  model <- coxph(
+    formula = Surv(time, status) ~ P + A,
+    data = data
+  )
+
+  cfscore <- CFscore(
+    data = data,
+    object = model,
+    outcome_formula = Surv(time, status) ~ 1,
+    treatment_formula = A ~ L,
+    treatment_of_interest = 0,
+    time_horizon = horizon,
+    cens.model = "KM",
+    stable_iptw = TRUE
+  )
+
+  stable_min <- min(cfscore$ipt$weights)
+  stable_max <- max(cfscore$ipt$weights)
+
+  cfscore_unstable <- CFscore(
+    data = data,
+    object = model,
+    outcome_formula = Surv(time, status) ~ 1,
+    treatment_formula = A ~ L,
+    treatment_of_interest = 0,
+    time_horizon = horizon,
+    cens.model = "KM",
+    stable_iptw = FALSE
+  )
+
+  unstable_min <- min(cfscore_unstable$ipt$weights)
+  unstable_max <- max(cfscore_unstable$ipt$weights)
+
+  expect_true(stable_min <= unstable_min)
+  expect_true(stable_max <= unstable_max)
+
+
+  time0_predicted <- predict_CF(model, data, "A", 0, horizon)
+  score <- riskRegression::Score(
+    list(time0_predicted),
+    formula = Hist(time0, status_uncensored) ~ 1,
+    data = data,
+    null.model = F,
+    times = horizon
+  )
+  score$oe <- mean(data$time0 <= horizon)/mean(time0_predicted)
+
+  expect_equal(unname(cfscore$score$auc), score$AUC$score$AUC, tolerance = 0.01)
+  expect_equal(unname(cfscore$score$brier), score$Brier$score$Brier, tolerance = 0.01)
+  expect_equal(unname(cfscore$score$oeratio), score$oe, tolerance = 0.01)
+
+})
+
+
 # minor bootstrap tests
 test_that("results are in between lower & upper bootstrap", {
   set.seed(1)
