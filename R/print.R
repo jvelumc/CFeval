@@ -48,7 +48,8 @@ plot.CFscore <- function(x, ...) {
   plot(1, type = "n",
        xlim = c(0, 1), ylim = c(0, 1),
        xlab = "Risk", ylab = "CF observed",
-       main = "CF Calibration plot")
+       main = "CF Calibration plot",
+       asp = 1)
   graphics::abline(0, 1, col = "black")
   colors <- palette.colors(n = length(models) + 1, recycle = TRUE)[-1]
   for (i in seq_along(models)) {
@@ -71,7 +72,8 @@ plot.CFscore <- function(x, ...) {
       plot(1, type = "n",
            xlim = c(0, 1), ylim = c(0, 1),
            xlab = "Risk", ylab = "CF observed",
-           main = paste0("CF Calibration plot ", m))
+           main = paste0("CF Calibration plot ", m),
+           asp = 1)
 
       for (i in 1:x$bootstrap_iterations) {
         lines(
