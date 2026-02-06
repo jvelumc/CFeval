@@ -598,7 +598,7 @@ test_that("null model binary outcome", {
 
 
 test_that("null model survival outcome", {
-  set.seed(1)
+  set.seed(2)
   horizon <- 10
   n <- 100000
   data <- data.frame(
@@ -612,10 +612,6 @@ test_that("null model survival outcome", {
   data$censortime <- simulate_time_to_event(n, 0.04, 0.5*data$L + 0.6*data$P +
                                               0.2*data$A)
   data$time_uncensored <- ifelse(data$A == 1, data$time1, data$time0)
-
-  data$status1 <- ifelse(data$time1 <= data$censortime, TRUE, FALSE)
-  data$obs_time1 <- ifelse(data$status1 == TRUE, data$time1, data$censortime)
-
   data$status_uncensored <- 1
 
   data$status <- ifelse(data$time_uncensored <= data$censortime, TRUE, FALSE)
@@ -629,14 +625,14 @@ test_that("null model survival outcome", {
     x = TRUE,
     data = data
   )
-  nullmodel <- survfit(Surv(obs_time1, status1) ~ 1, data)
+  nullmodel <- survfit(Surv(time0, status_uncensored) ~ 1, data)
 
   cfscore <- CFscore(
     data = data,
     object = model,
-    outcome_formula = Surv(time, status) ~ 1,
+    outcome_formula = Surv(time, status) ~ L + P + A,
     treatment_formula = A ~ L,
-    treatment_of_interest = 1,
+    treatment_of_interest = 0,
     metrics = c(),
     cens.model = "cox",
     time_horizon = horizon,
@@ -649,9 +645,6 @@ test_that("null model survival outcome", {
     tolerance = 0.01
   )
 
-  score <- riskRegression::Score(list(model), formula = Surv(time1, status_uncensored) ~ 1,
-                        data, null.model = TRUE)
-  score
 })
 
 

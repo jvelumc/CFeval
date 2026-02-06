@@ -107,13 +107,19 @@ CFscore <- function(object, data, outcome_formula, treatment_formula,
       )
       null_preds <- predict.lm(null_model, newdata = data)
     } else { # survival outcome
-      censor_ids <- cfscore$outcome
+      # fit null model in a pseudopopuluation where everyone was treated and
+      # no censoring
+      # this seems wrong, but we only care about horizon, for which this works
+      # (i think)
+      uncensor_ids <- cfscore$ipc$weights != 0
+      cf_ids <- pseudo_ids & uncensor_ids
 
-      null_model <- survfit(
-        cfscore$outcome[pseudo_ids] ~ 1,
-        weights = cfscore$ipt$weights[pseudo_ids]
+      null_model <- weighted.mean(
+        cfscore$status_at_horizon[cf_ids],
+        cfscore$ipt$weights[cf_ids]*cfscore$ipc$weights[cf_ids]
       )
-      null_preds <- 1 - rep(summary(null_model, times = time_horizon)$surv, nrow(data))
+
+      null_preds <- rep(null_model, nrow(data))
     }
     cfscore$predictions <- c(list("null model" = null_preds), cfscore$predictions)
   }
