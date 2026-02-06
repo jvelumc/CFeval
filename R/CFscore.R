@@ -99,15 +99,19 @@ CFscore <- function(object, data, outcome_formula, treatment_formula,
 
   # add null model if required
   if (null.model == TRUE) {
+    pseudo_ids <- cfscore$observed_treatment == cfscore$treatment_of_interest
     if (cfscore$outcome_type == "binary") {
-      pseudo_ids <- cfscore$observed_treatment == cfscore$treatment_of_interest
       null_model <- lm(
         cfscore$outcome[pseudo_ids] ~ 1,
         weights = cfscore$ipt$weights[pseudo_ids]
       )
       null_preds <- predict.lm(null_model, newdata = data)
-    } else {
-      # survival null model not implemented yet
+    } else { # survival outcome
+      null_model <- survfit(
+        cfscore$outcome[pseudo_ids] ~ 1,
+        weights = cfscore$ipt$weights[pseudo_ids]
+      )
+      null_preds <- 1 - rep(summary(null_model, times = time_horizon)$surv, nrow(data))
     }
     cfscore$predictions <- c(list("null model" = null_preds), cfscore$predictions)
   }
