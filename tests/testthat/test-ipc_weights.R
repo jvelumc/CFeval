@@ -54,17 +54,30 @@ test_that("ipc KM simple correct", {
   )
 })
 
-# tests with some survival ties (where one has outcome, one is censor)?
-# test_that("ipc ties", {
-#   data <- data.frame(
-#     time = c(1,2,2,3),
-#     status = c(1, 0, 1, 1)
-#   )
-#   expect_equal(
-#     ipc_weights(data, )
-#   )
-#
-# })
+# tests with some survival ties (one has outcome, one is censor at same t)
+# outcomes (should) happen before censors
+test_that("ipc ties", {
+  data <- data.frame(
+    time = c(1,2,2,3),
+    status = c(1, 0, 1, 1)
+  )
+
+  expect_equal(
+    ipc_weights(data, Surv(time, status) ~ 1, type = "KM", time_horizon = 1.9)$weights,
+    c(1,1,1,1)
+  )
+
+  expect_equal(
+    ipc_weights(data, Surv(time, status) ~ 1, type = "KM", time_horizon = 2.0)$weights,
+    c(1,1,1,1)
+  )
+
+  expect_equal(
+    ipc_weights(data, Surv(time, status) ~ 1, type = "KM", time_horizon = 2.1)$weights,
+    c(1,0,1,2)
+  )
+
+})
 
 test_that(
   "ipc-weighted population represents uncensored population,
