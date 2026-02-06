@@ -4,7 +4,7 @@ CFscore <- function(object, data, outcome_formula, treatment_formula,
                     treatment_of_interest,
                     metrics = c("auc", "brier", "oeratio", "oeratio_pp", "calplot"),
                     time_horizon, cens.model = "cox",
-                    stable_iptw = FALSE,
+                    null.model = TRUE, stable_iptw = FALSE,
                     bootstrap = 0, iptw, ipcw, quiet = FALSE) {
 
   check_missing(object)
@@ -32,7 +32,7 @@ CFscore <- function(object, data, outcome_formula, treatment_formula,
     cfscore$outcome_type <- "survival"
     cfscore$time_horizon <- time_horizon
     cfscore$status_at_horizon <- ifelse(
-      test = cfscore$outcome[, 1] < time_horizon,
+      test = cfscore$outcome[, 1] < time_horizon, # TODO < or <= ?
       yes = cfscore$outcome[, 2],
       no = FALSE
     )
@@ -96,6 +96,22 @@ CFscore <- function(object, data, outcome_formula, treatment_formula,
     }
     cfscore$ipc$weights <- ipcw
   }
+
+  # add null model if required
+  if (null.model == TRUE) {
+    if (cfscore$outcome_type == "binary") {
+      pseudo_ids <- cfscore$observed_treatment == cfscore$treatment_of_interest
+      null_model <- lm(
+        cfscore$outcome[pseudo_ids] ~ 1,
+        weights = cfscore$ipt$weights[pseudo_ids]
+      )
+      null_preds <- predict.lm(null_model, newdata = data)
+    } else {
+      # survival null model not implemented yet
+    }
+    cfscore$predictions <- c(list("null model" = null_preds), cfscore$predictions)
+  }
+
 
   cfscore$metrics <- metrics
   cfscore$score <- get_metrics(cfscore)
