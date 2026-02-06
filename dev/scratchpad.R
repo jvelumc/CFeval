@@ -1,5 +1,5 @@
 set.seed(1)
-n <- 50000
+n <- 5000
 data <- data.frame(
   L1 = rnorm(n, mean = 0),
   L2 = rbinom(n, 1, 0.5),
@@ -41,12 +41,14 @@ print_model(model2)
 
 cfscore <- CFscore(
   data = data,
-  object = list(model0, model1, model2),
+  object = list("lol" = model0, "hi" = model1, "hello" = model2),
   outcome_formula = Y ~ 1,
   treatment_formula = A ~ L1 + L2,
   treatment_of_interest = 0,
-  bootstrap = 200
+  bootstrap = 100
 )
+
+
 cfscore
 cfscore$ipt$weights |> summary()
 

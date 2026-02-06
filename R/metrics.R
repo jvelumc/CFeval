@@ -106,7 +106,8 @@ cf_calplot <- function(obs_outcome, obs_trt, cf_pred, cf_trt, ipw) {
 
   cal <- data.frame(obs_outcome, obs_trt, cf_pred, ipw)
   cal <- cal[order(cf_pred), ]
-  cal$group <- cut(cal$cf_pred, breaks = n_breaks, label = F)
+  cal$group <- cut(cal$cf_pred, breaks = n_breaks, labels = F)
+  cal$group <- factor(cal$group, levels = seq_len(n_breaks))
   mean_preds <- tapply(
     X = cal$cf_pred,
     INDEX = cal$group,
