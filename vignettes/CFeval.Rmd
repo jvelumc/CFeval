@@ -30,7 +30,7 @@ simulate_data <- function(n) {
   data$L <- rnorm(n)
   data$A <- rbinom(n, 1, plogis(data$L))
   data$P <- rnorm(n)
-  data$Y <- rbinom(n, 1, plogis(0.5 + data$L + 1.25 * data$P - data$A * 0.6))
+  data$Y <- rbinom(n, 1, plogis(0.5 + data$L + 1.25 * data$P - 0.6 * data$A))
   data
 }
 
@@ -81,6 +81,7 @@ cfscore <- CFscore(
 
 cfscore
 ```
+* Note that the AUC of the naive model is equal to the causal model. AUC is driven entirely by how individuals are ranked, not by the magnitude of the predicted probabilities. In this simple setting, P is the only variable driving prognostic differences between individuals in the prediction models. Even though IPTW changes the estimated coefficients, it does not change the direction of the association with P. When predicting outcomes under treatment for everyone, higher values of P still correspond to higher predicted risk in both models, so individuals are ranked in exactly the same way. As a result, both models produce identical AUCs.
 
 ## Extra options
 
