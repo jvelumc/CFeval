@@ -4,19 +4,28 @@ test_that("ipc KM simple correct", {
     my_status = c(1,0,1)
   )
   expect_equal(
-    ipc_weights(data, survival::Surv(my_time, my_status) ~ 1, type = "KM", time_horizon = 0.5)$weights,
+    ipc_weights(data, survival::Surv(my_time, my_status) ~ 1,
+                type = "KM", time_horizon = 0.5)$weights,
     c(1,1,1)
   )
   expect_equal(
-    ipc_weights(data, survival::Surv(my_time, my_status) ~ 1, type = "KM", time_horizon = 1.5)$weights,
+    ipc_weights(data, survival::Surv(my_time, my_status) ~ 1,
+                type = "KM", time_horizon = 1.5)$weights,
     c(1,1,1)
   )
   expect_equal(
-    ipc_weights(data, survival::Surv(my_time, my_status) ~ 1, type = "KM", time_horizon = 2.5)$weights,
+    ipc_weights(data, survival::Surv(my_time, my_status) ~ 1,
+                type = "KM", time_horizon = 2)$weights,
+    c(1,1,1)
+  )
+  expect_equal(
+    ipc_weights(data, survival::Surv(my_time, my_status) ~ 1,
+                type = "KM", time_horizon = 2.5)$weights,
     c(1,0,2)
   )
   expect_equal(
-    ipc_weights(data, survival::Surv(my_time, my_status) ~ 1, type = "KM", time_horizon = 3.5)$weights,
+    ipc_weights(data, survival::Surv(my_time, my_status) ~ 1,
+                type = "KM", time_horizon = 3.5)$weights,
     c(1,0,2)
   )
 
@@ -26,19 +35,23 @@ test_that("ipc KM simple correct", {
   )
 
   expect_equal(
-    ipc_weights(data, survival::Surv(my_time, my_status) ~ 1, type = "KM", time_horizon = 0.5)$weights,
+    ipc_weights(data, survival::Surv(my_time, my_status) ~ 1,
+                type = "KM", time_horizon = 0.5)$weights,
     c(1,1,1)
   )
   expect_equal(
-    ipc_weights(data, survival::Surv(my_time, my_status) ~ 1, type = "KM", time_horizon = 1.5)$weights,
+    ipc_weights(data, survival::Surv(my_time, my_status) ~ 1,
+                type = "KM", time_horizon = 1.5)$weights,
     c(0,1.5,1.5)
   )
   expect_equal(
-    ipc_weights(data, survival::Surv(my_time, my_status) ~ 1, type = "KM", time_horizon = 2.5)$weights,
+    ipc_weights(data, survival::Surv(my_time, my_status) ~ 1,
+                type = "KM", time_horizon = 2.5)$weights,
     c(0,1.5,1.5)
   )
   expect_equal(
-    ipc_weights(data, survival::Surv(my_time, my_status) ~ 1, type = "KM", time_horizon = 3.5)$weights,
+    ipc_weights(data, survival::Surv(my_time, my_status) ~ 1,
+                type = "KM", time_horizon = 3.5)$weights,
     c(0,1.5,0)
   )
 
@@ -49,40 +62,55 @@ test_that("ipc KM simple correct", {
   )
 
   expect_error(
-    ipc_weights(data, survival::Surv(time, status) ~ cfscore_time, type = "cox", time_horizon = 0.5),
+    ipc_weights(data, survival::Surv(time, status) ~ cfscore_time,
+                type = "cox", time_horizon = 0.5),
     regexp = "Please don't use the variable names cfscore_time"
   )
 })
 
 # tests with some survival ties (one has outcome, one is censor at same t)
 # outcomes (should) happen before censors
-# test_that("ipc ties", {
-#   data <- data.frame(
-#     time = c(1,2,2,3),
-#     status = c(1, 0, 1, 1)
-#   )
-#
-#   data <- data.frame(
-#     time = c(1,2,2,3),
-#     status = c(1, 1, 0, 1)
-#   )
-#
-#   expect_equal(
-#     ipc_weights(data, Surv(time, status) ~ 1, type = "KM", time_horizon = 1.9)$weights,
-#     c(1,1,1,1)
-#   )
-#
-#   expect_equal(
-#     ipc_weights(data, Surv(time, status) ~ 1, type = "KM", time_horizon = 2.0)$weights,
-#     c(1,1,1,1)
-#   )
-#
-#   expect_equal(
-#     ipc_weights(data, Surv(time, status) ~ 1, type = "KM", time_horizon = 2.1)$weights,
-#     c(1,0,1,2)
-#   )
-#
-# })
+test_that("ipc ties", {
+  data <- data.frame(
+    time = c(1,2,2,3),
+    status = c(1, 0, 1, 1)
+  )
+
+  expect_equal(
+    ipc_weights(data, Surv(time, status) ~ 1, type = "KM", time_horizon = 1.9)$weights,
+    c(1,1,1,1)
+  )
+
+  expect_equal(
+    ipc_weights(data, Surv(time, status) ~ 1, type = "KM", time_horizon = 2.0)$weights,
+    c(1,1,1,1)
+  )
+
+  expect_equal(
+    ipc_weights(data, Surv(time, status) ~ 1, type = "KM", time_horizon = 2.1)$weights,
+    c(1,0,1,2)
+  )
+
+  data <- data.frame(
+    time = c(1,2,2,3),
+    status = c(1, 1, 0, 1)
+  )
+  expect_equal(
+    ipc_weights(data, Surv(time, status) ~ 1, type = "KM", time_horizon = 1.9)$weights,
+    c(1,1,1,1)
+  )
+
+  expect_equal(
+    ipc_weights(data, Surv(time, status) ~ 1, type = "KM", time_horizon = 2.0)$weights,
+    c(1,1,1,1)
+  )
+
+  expect_equal(
+    ipc_weights(data, Surv(time, status) ~ 1, type = "KM", time_horizon = 2.1)$weights,
+    c(1,1,0,2)
+  )
+
+})
 
 test_that(
   "ipc-weighted population represents uncensored population,
