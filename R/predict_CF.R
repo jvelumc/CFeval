@@ -29,7 +29,7 @@ predict_cox <- function(model, data, time_horizon) {
     stop("time_horizon must have length 1 or nrow(data)")
   }
 
-  idx <- findInterval(time_horizon, bh$time)
+  idx <- findInterval(time_horizon, bh$time, left.open = TRUE)
 
   H0_horizon <- numeric(n)
   valid <- idx > 0

@@ -648,9 +648,84 @@ test_that("null model survival outcome", {
 
 # ties
 
-# test_that("cfscore ties", {
-#   # TODO
-# })
+test_that("CFscore handles horizon on censor time correctly", {
+  set.seed(1)
+
+  adminstrative_censor <- 10
+  n <- 10000
+  data <- data.frame(
+    L = rnorm(n, mean = 0),
+    P = rnorm(n, mean = 0)
+  )
+  data$A <- rbinom(n, 1, plogis(0.2 + 0.5*data$L))
+
+  data$time0 <- simulate_time_to_event(n, 0.04, data$L + 0.5*data$P)
+  data$time1 <- simulate_time_to_event(n, 0.04, data$L + 0.5*data$P - 0.6)
+  data$time_uncensored <- ifelse(data$A == 1, data$time1, data$time0)
+
+  summary(data$time0)
+  summary(data$time1)
+
+  data$status <- ifelse(data$time_uncensored <= adminstrative_censor, TRUE, FALSE)
+  data$time <- ifelse(data$status == TRUE, data$time_uncensored, adminstrative_censor)
+
+  data$status_uncensored <- 1
+
+  model <- coxph(
+    formula = Surv(time, status) ~ P + A,
+    data = data
+  ) # naive model, i.e. not adjusting for confounding
+
+  cfscore_km999 <- CFscore(
+    data = data,
+    object = model,
+    outcome_formula = Surv(time, status) ~ 1,
+    treatment_formula = A ~ L,
+    treatment_of_interest = 0,
+    time_horizon = 9.999,
+    cens.model = "KM",
+    null.model = TRUE
+  )
+
+  cfscore_km10 <- CFscore(
+    data = data,
+    object = model,
+    outcome_formula = Surv(time, status) ~ 1,
+    treatment_formula = A ~ L,
+    treatment_of_interest = 0,
+    time_horizon = 10,
+    cens.model = "KM",
+    null.model = TRUE
+  )
+
+  cfscore_km999
+  cfscore_km10
+
+  cfscore_cox999 <- CFscore(
+    data = data,
+    object = model,
+    outcome_formula = Surv(time, status) ~ 1,
+    treatment_formula = A ~ L,
+    treatment_of_interest = 0,
+    time_horizon = 9.999,
+    cens.model = "cox",
+    null.model = FALSE
+  )
+
+  cfscore_cox10 <- CFscore(
+    data = data,
+    object = model,
+    outcome_formula = Surv(time, status) ~ 1,
+    treatment_formula = A ~ L,
+    treatment_of_interest = 0,
+    time_horizon = 10,
+    cens.model = "cox",
+    null.model = FALSE
+  )
+
+  expect_equal(cfscore_km999$score, cfscore_km10$score)
+  expect_equal(cfscore_cox999$score, cfscore_cox10$score)
+})
 
 
 
