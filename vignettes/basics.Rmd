@@ -1,0 +1,102 @@
+---
+title: "basics"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{basics}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+  
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+collapse = TRUE,
+comment = "#>"
+)
+```
+
+```{r setup}
+library(CFeval)
+set.seed(1)
+```
+
+# Toy example
+
+## Model development
+In this toy example, we simulate simulate data for binary outcome Y and (point) treatment A, with the relation between A and Y confounded by a variable L. Variable P is a prognostic variable for only the outcome. The treatment reduces the risk on a bad outcome (Y = 1) in this simulated example. 
+
+```{r}
+simulate_data <- function(n) {
+  data <- data.frame(id = 1:n)
+  data$L <- rnorm(n)
+  data$A <- rbinom(n, 1, plogis(data$L))
+  data$P <- rnorm(n)
+  data$Y <- rbinom(n, 1, plogis(0.5 + data$L + 1.25 * data$P - data$A * 0.6))
+  data
+}
+
+df_dev <- simulate_data(1000)
+
+head(df_dev)
+```
+
+Fitting a (logistic regression) model on this data without accounting for the confounder L results in a model where treatment apparently increases the risk on the outcome
+
+```{r}
+naive_model <- glm(Y ~ P + A, family = "binomial", data = df_dev)
+naive_model$coefficients
+```
+Instead, we could adjust for the confounder L via (for example) inverse probability of treatment weighting (iptw). [ref]
+
+```{r}
+propensity_model <- glm(A ~ L, family = "binomial", data = df_dev)
+propensity_score <- predict(propensity_model, type = "response")
+iptw <- 1 / ifelse(df_dev$A == 1, propensity_score, 1 - propensity_score)
+
+causal_model <- glm(Y ~ P + A, family = "binomial", data = df_dev, weights = iptw)
+coefficients(causal_model)
+```
+From now on we assume some model has been developed (be it a good or a bad one), and we want to know if it provides accurate estimates of the counterfactual risk on outcome under both treatment options a = 1 and a = 0.
+
+## Validation
+
+We assume there is some validation dataset, which are independent from data used for development of the models. This package aims to help the user in assessing how well the predictions would match the validation data if all individuals had followed a certain treatment option of interest. 
+Note that the causal structure of the validation data set may be different from the causal structure of the development data set, in which the model was trained. A model may for example be developed from RCT data in which treatment was randomly assigned, while we are validating in an observational cohort in which treatment is confounded by some variables. 
+
+Let's first simulate some validation data set. In this example, it is generated using the same mechanism as the development data. It has 5000 rows instead of 1000.
+```{r}
+df_val <- simulate_data(n = 5000)
+head(df_val)
+```
+The main function CFscore() estimates several counterfactual performance measures in a validation dataset, printing by default the assumptions required for valid inference. The arguments supplied are the models and the validation data, a formula for which the left hand side denotes the outcome variable in the validation data, a treatment formula for which the left hand side denotes the treatment variable and the right hand side the confounders required to adjust for said treatment, and the hypothetical treatment option for which you want to know how well the model performs if everyone in the population was (counterfactually) assigned to that treatment. 
+
+```{r, fig.dim = c(4,4)}
+cfscore <- CFscore(
+  object = list("naive model" = naive_model, "causal model" = causal_model),
+  data = df_val,
+  outcome_formula = Y ~ 1,
+  treatment_formula = A ~ L,
+  treatment_of_interest = 1,
+  metrics = c("auc", "brier", "oeratio", "calplot")
+)
+
+cfscore
+```
+
+## Extra options
+
+### Bootstrap
+We can also run a bootstrap to estimate 95\% confidence intervals around the performance metrics.
+
+```{r, fig.dim = c(4,4)}
+CFscore(
+  object = list("naive model" = naive_model, "causal model" = causal_model),
+  data = df_val,
+  outcome_formula = Y ~ 1,
+  treatment_formula = A ~ L,
+  treatment_of_interest = 1,
+  metrics = c("auc", "brier", "oeratio", "calplot"),
+  bootstrap = 200
+)
+```
+
+Further options are to use stabilized iptw, and time to event outcomes.

@@ -663,9 +663,6 @@ test_that("CFscore handles horizon on censor time correctly", {
   data$time1 <- simulate_time_to_event(n, 0.04, data$L + 0.5*data$P - 0.6)
   data$time_uncensored <- ifelse(data$A == 1, data$time1, data$time0)
 
-  summary(data$time0)
-  summary(data$time1)
-
   data$status <- ifelse(data$time_uncensored <= adminstrative_censor, TRUE, FALSE)
   data$time <- ifelse(data$status == TRUE, data$time_uncensored, adminstrative_censor)
 
@@ -674,7 +671,7 @@ test_that("CFscore handles horizon on censor time correctly", {
   model <- coxph(
     formula = Surv(time, status) ~ P + A,
     data = data
-  ) # naive model, i.e. not adjusting for confounding
+  )
 
   cfscore_km999 <- CFscore(
     data = data,
@@ -698,9 +695,6 @@ test_that("CFscore handles horizon on censor time correctly", {
     null.model = TRUE
   )
 
-  cfscore_km999
-  cfscore_km10
-
   cfscore_cox999 <- CFscore(
     data = data,
     object = model,
@@ -709,7 +703,7 @@ test_that("CFscore handles horizon on censor time correctly", {
     treatment_of_interest = 0,
     time_horizon = 9.999,
     cens.model = "cox",
-    null.model = FALSE
+    null.model = TRUE
   )
 
   cfscore_cox10 <- CFscore(
@@ -720,7 +714,7 @@ test_that("CFscore handles horizon on censor time correctly", {
     treatment_of_interest = 0,
     time_horizon = 10,
     cens.model = "cox",
-    null.model = FALSE
+    null.model = TRUE
   )
 
   expect_equal(cfscore_km999$score, cfscore_km10$score)
