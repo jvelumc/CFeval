@@ -385,7 +385,6 @@ test_that("CFscore metrics equal to unobserved CF metrics, surv, cox censor", {
   expect_equal(unname(cfscore$score$oeratio), score$oe, tolerance = 0.01)
 })
 
-
 test_that("CFscore metrics equal to unobserved CF metrics, surv, KM censor, stable weights", {
   set.seed(1)
   horizon <- 10
@@ -566,6 +565,7 @@ test_that("results are in between lower & upper bootstrap, surv, cox censor", {
 })
 
 # null model
+
 test_that("null model binary outcome", {
   set.seed(1)
   n <- 100000
@@ -595,7 +595,6 @@ test_that("null model binary outcome", {
     tolerance = 0.01
   )
 })
-
 
 test_that("null model survival outcome", {
   set.seed(2)
@@ -647,7 +646,11 @@ test_that("null model survival outcome", {
 
 })
 
+# ties
 
+# test_that("cfscore ties", {
+#   # TODO
+# })
 
 
 

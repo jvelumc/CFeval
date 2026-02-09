@@ -1,5 +1,69 @@
 library(survival)
 
+#' Counterfactual validation score
+#'
+#' @param object One of the following three options to be validated:
+#' \itemize{
+#'   \item a numeric vector, corresponding to risk predictions
+#'   \item a glm or coxph model
+#'   \item a (named) list, with one or more of the previous 2 options, for
+#'   validating and comparing multiple models at once.
+#' }
+#' @param data A data.frame containing at least the observed outcome, assigned
+#'   treatment, and necessary confounders for the validation of object.
+#' @param outcome_formula A formula which identifies the outcome (left hand
+#'   side). E.g. Y ~ 1 for binary and Surv(time, status) ~ 1 for time-to-event
+#'   outcomes. In right censored data, the right hand side of the formula is
+#'   used to estimate the inverse probability of censoring weights (IPCW) model.
+#'   Alternatively, the IPCW can also be specified themselves using the ipcw
+#'   argument, in which case the right hand side of this formula is ignored.
+#' @param treatment_formula A formula which identifies the treatment (left hand
+#'   side). E.g. A ~ 1. The right hand side of the formula can be used to
+#'   specify the confounders used to estimate the inverse probability of
+#'   treatment weights (IPTW) model. E.g. A ~ L, where L is the confounder
+#'   required to adjust for treatment. The IPTW can also be specified themselves
+#'   using the iptw argument, in which case the right hand side of this formula
+#'   is ignored.
+#' @param treatment_of_interest A treatment level for which the counterfactual
+#'   perormance measures should be evaluated.
+#' @param metrics A character vector specifying which performance metrics to be
+#'   computed. Options are c("auc", "brier", "oeratio", "oeratio_pp",
+#'   "calplot"). See details.
+#' @param time_horizon For time to event data, the prediction horizon of
+#'   interest.
+#' @param cens.model Model for estimating inverse probability of censoring
+#'   weights (IPCW). Methods currently implemented are Kaplan-Meier ("KM") or
+#'   Cox ("cox") both applied to the censored times.
+#' @param null.model If TRUE fit a risk prediction model which ignores the
+#'   covariates and predicts the same value for all subjects. The model is
+#'   fitted using the data in which all subjects are counterfactually assigned
+#'   the treatment of interest (using the IPTW, as estimated using the
+#'   treatment_formula or as given by the iptw argument). For time-to-event
+#'   outcomes, the subjects are also counterfactually uncensored (using the
+#'   IPCW, as estimated using the outcome_formula, or as given by the ipcw
+#'   argument).
+#' @param stable_iptw if TRUE, estimate stabilized IPTW weights. See details.
+#' @param bootstrap If this is an integer greater than 0, this indicates the
+#'   number of bootstrap iterations, to compute 95\% confidence intervals around
+#'   the performance metrics.
+#' @param iptw A numeric vector, containing the inverse probability of treatment
+#'   weights. These are normally computed using the treatment_formula, but they
+#'   can be specified directly via this argument. If specified via this
+#'   argument, bootstrap is not possible.
+#' @param ipcw A numeric vector, containing the inverse probability of censor
+#'   weights. These are normally computed using the outcome_formula, but they
+#'   can be specified directly via this argument. If specified via this
+#'   argument, bootstrap is not possible.
+#' @param quiet If set to TRUE, don't print assumptions.
+#'
+#' @returns A list with performance metrics.
+#'
+#' @details Additional details...
+#'
+#' @export
+#'
+#' @examples
+#' print("hi")
 CFscore <- function(object, data, outcome_formula, treatment_formula,
                     treatment_of_interest,
                     metrics = c("auc", "brier", "oeratio", "oeratio_pp", "calplot"),
@@ -32,7 +96,7 @@ CFscore <- function(object, data, outcome_formula, treatment_formula,
     cfscore$outcome_type <- "survival"
     cfscore$time_horizon <- time_horizon
     cfscore$status_at_horizon <- ifelse(
-      test = cfscore$outcome[, 1] < time_horizon, # TODO < or <= ?
+      test = cfscore$outcome[, 1] <= time_horizon,
       yes = cfscore$outcome[, 2],
       no = FALSE
     )
