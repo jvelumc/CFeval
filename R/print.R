@@ -38,18 +38,18 @@ plot.CFscore <- function(x, ...) {
   # this plotting function should ideally be more customizable,
   # i.e. show/hide legend, colors, xlim, ylim, ....
 
-
-  # if no bootstrap, draw all calibration plots in 1
-  # if bootstrap, each model gets on calibration plot
-
   models <- names(x$predictions)
-
 
   plot(1, type = "n",
        xlim = c(0, 1), ylim = c(0, 1),
-       xlab = "Risk", ylab = "CF observed",
-       main = "CF Calibration plot",
-       asp = 1)
+       asp = 1,
+       xlab = "Predicted", ylab = "Observed")
+  title(
+    main = "Counterfactual calibration plot",
+    sub = paste0("Calibration plot had everyone followed treatment option ", x$treatment_of_interest),
+    col.sub = "#404040",
+    cex.sub = 0.8
+  )
   graphics::abline(0, 1, col = "black")
   colors <- palette.colors(n = length(models) + 1, recycle = TRUE)[-1]
   for (i in seq_along(models)) {
@@ -71,15 +71,19 @@ plot.CFscore <- function(x, ...) {
     for (m in models) {
       plot(1, type = "n",
            xlim = c(0, 1), ylim = c(0, 1),
-           xlab = "Risk", ylab = "CF observed",
-           main = paste0("CF Calibration plot ", m),
+           xlab = "Predicted", ylab = "Observed",
            asp = 1)
-
+      title(
+        main = paste0("Counterfactual calibration plot for ", m),
+        sub = paste0("Calibration plot had everyone followed treatment option ", x$treatment_of_interest),
+        col.sub = "#404040",
+        cex.sub = 0.8
+      )
       for (i in 1:x$bootstrap_iterations) {
         lines(
           x = x$bootstrap$raw$calplot[[m]][[i]]$pred,
           y = x$bootstrap$raw$calplot[[m]][[i]]$obs,
-          type = "l",
+          type = "o",
           col = "darkgrey"
         )
       }
@@ -95,7 +99,7 @@ plot.CFscore <- function(x, ...) {
              col    = c("darkgrey", "blue"),
              lty    = 1,
              lwd    = c(1,2),
-             pch    = c(NA_integer_,1),
+             pch    = c(1,1),
              bty    = "n")
     }
   }

@@ -1,5 +1,5 @@
 ---
-title: "basics"
+title: "CFeval"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{basics}
@@ -95,7 +95,8 @@ CFscore(
   treatment_formula = A ~ L,
   treatment_of_interest = 1,
   metrics = c("auc", "brier", "oeratio", "calplot"),
-  bootstrap = 200
+  bootstrap = 200,
+  bootstrap_progress = FALSE
 )
 ```
 

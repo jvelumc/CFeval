@@ -69,7 +69,8 @@ CFscore <- function(object, data, outcome_formula, treatment_formula,
                     metrics = c("auc", "brier", "oeratio", "oeratio_pp", "calplot"),
                     time_horizon, cens.model = "cox",
                     null.model = TRUE, stable_iptw = FALSE,
-                    bootstrap = 0, iptw, ipcw, quiet = FALSE) {
+                    bootstrap = 0, bootstrap_progress = TRUE,
+                    iptw, ipcw, quiet = FALSE) {
 
   check_missing(object)
   check_missing(data)
@@ -194,6 +195,7 @@ CFscore <- function(object, data, outcome_formula, treatment_formula,
 
   cfscore$bootstrap_iterations <- bootstrap
   if (bootstrap != 0) {
+    cfscore$bootstrap_progress <- bootstrap_progress
     cfscore$bootstrap <- bootstrap(data, cfscore)
   }
 

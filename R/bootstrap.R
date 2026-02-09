@@ -49,7 +49,8 @@ bootstrap <- function(data, cfscore) {
     function(x) {
       bootstrap_iteration(data, cfscore)
     },
-    "bootstrapping"
+    "bootstrapping",
+    progress = cfscore$bootstrap_progress
   )
   # transpose results
   # (iteration > metric > model) -> (metric > model > iteration)
@@ -96,17 +97,23 @@ bootstrap <- function(data, cfscore) {
 }
 
 
-lapply_progress <- function(x, FUN, task_description) {
-
-  FUN2 <- function(x, i, n) {
-    result <- FUN(x)
-    cat("\r", task_description, ": ", i, "/", n, "                          ")
-    return(result)
-  }
+lapply_progress <- function(x, FUN, task_description, progress = TRUE) {
 
   n <- length(x)
-  result <- lapply(as.list(1:n), function(i) FUN2(x[[i]], i, n))
-  cat("\r")
+
+  if (progress == FALSE) {
+    result <- lapply(as.list(1:n), FUN)
+  } else {
+    FUN2 <- function(x, i, n) {
+      result <- FUN(x)
+      cat("\r", task_description, ": ", i, "/", n, "     ")
+      return(result)
+    }
+
+    result <- lapply(as.list(1:n), function(i) FUN2(x[[i]], i, n))
+    cat("\r")
+  }
+
   return(result)
 }
 
