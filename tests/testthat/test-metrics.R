@@ -114,17 +114,6 @@ test_that(
       score$AUC$score$AUC
     )
 
-    # expect_equal(
-    #   cf_oeratio(
-    #     obs_outcome = df_toy$Y,
-    #     obs_trt = df_toy$A,
-    #     cf_pred = df_toy$pred,
-    #     cf_trt = 0,
-    #     ipw = df_toy$ipw
-    #   ),
-    #   mean(df_pseudo_exact$Y)/mean(df_pseudo_exact$pred)
-    # )
-
     expect_equal(
       cf_oeratio_pp(
         obs_outcome = df_toy$Y,
@@ -332,5 +321,33 @@ test_that(
     )
   })
 
+test_that(
+  "binary outcome/point trt/binary confounder BS analytically correct",
+  {
+    n <- 1000
+    data <- data.frame(
+      L = rbinom(n, 1, 0.3)
+    )
+    data$A <- rbinom(n, 1, plogis(0.2 + 0.6*data$L))
+    data$Y0 <- rbinom(n, 1, plogis(0.1 + 0.4*data$L))
+    data$Y1 <- rbinom(n, 1, plogis(0.1 + 0.4*data$L - 0.5))
+    data$Y <- ifelse(data$A == 1, data$Y1, data$Y0)
 
+    data$predictions <- runif(n, 0, 1)
+
+    p_hat <- with(data, tapply(A, L, mean))
+    p_i <- p_hat[as.character(data$L)]
+    data$w <- 1/ifelse(data$A == 1, p_i, 1 - p_i)
+
+    expect_equal(
+      cf_brier(data$Y, data$A, data$predictions, 0, data$w),
+      with(data[data$A == 0,], 1/sum(w) * sum((predictions - Y)^2 * w))
+    )
+    expect_equal(
+      unname(CFscore(data$predictions, data, Y ~ 1, A ~ L, 0, metrics = "brier",
+                     null.model = F)$score$brier),
+      with(data[data$A == 0,], 1/sum(w) * sum((predictions - Y)^2 * w))
+    )
+  }
+)
 
