@@ -58,12 +58,40 @@ library(survival)
 #'
 #' @returns A list with performance metrics.
 #'
-#' @details Additional details...
+#' @details auc is area under the (ROC) curve, estimated ...
+#'
+#'   Brier score is defined as 1 / sum(iptw) sum(predictions_i - outcome_i)^2
+#'
+#'   oeratio and oeratio_pp represent the observed/expected ratio, where
+#'   observed is the mean of the outcomes in the pseudopopulation. For oeratio,
+#'   the expected is the mean of the predictions in the original observed
+#'   population. For oeratio_pp, expected is the mean of the predictions in the
+#'   pseudopopulation. A perfect model will have oeratio_pp equal to exactly
+#'   one, but not necessarily oeratio equal to one, if the size of the
+#'   (weighted) pseudopopulation is not exactly equal to the size of the
+#'   original population.
 #'
 #' @export
 #'
 #' @examples
-#' print("hi")
+#' n <- 1000
+#'
+#' data <- data.frame(L = rnorm(n), P = rnorm(n))
+#' data$A <- rbinom(n, 1, plogis(data$L))
+#' data$Y <- rbinom(n, 1, plogis(0.1 + 0.5*data$L + 0.7*data$P - 2*data$A))
+#'
+#' random <- runif(n, 0, 1)
+#' model <- glm(Y ~ A + P, data = data, family = "binomial")
+#' naive_perfect <- data$Y
+#'
+#' CFscore(
+#'   object = list("ran" = random, "mod" = model, "per" = naive_perfect),
+#'   data = data,
+#'   outcome_formula = Y ~ 1,
+#'   treatment_formula = A ~ L,
+#'   treatment_of_interest = 0,
+#' )
+
 CFscore <- function(object, data, outcome_formula, treatment_formula,
                     treatment_of_interest,
                     metrics = c("auc", "brier", "oeratio", "oeratio_pp", "calplot"),

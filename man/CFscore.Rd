@@ -16,6 +16,7 @@ CFscore(
   null.model = TRUE,
   stable_iptw = FALSE,
   bootstrap = 0,
+  bootstrap_progress = TRUE,
   iptw,
   ipcw,
   quiet = FALSE
@@ -96,8 +97,33 @@ A list with performance metrics.
 Counterfactual validation score
 }
 \details{
-Additional details...
+auc is area under the (ROC) curve, estimated ...
+
+  Brier score is defined as 1 / sum(iptw) sum(predictions_i - outcome_i)^2
+
+  oeratio and oeratio_pp represent the observed/expected ratio, where
+  observed is the mean of the outcomes in the pseudopopulation. For oeratio,
+  the expected is the mean of the predictions in the original observed
+  population. For oeratio_pp, expected is the mean of the predictions in the
+  pseudopopulation. A perfect model will have oeratio_pp equal to exactly
+  one, but not necessarily oeratio equal to one, if the size of the
+  (weighted) pseudopopulation is not exactly equal to the size of the
+  original population.
 }
 \examples{
-print("hi")
+data <- data.frame(L = rnorm(1000), P = rnorm(1000))
+data$A <- rbinom(1000, 1, plogis(L))
+data$Y <- rbinom(1000, 1, plogis(0.1 + 0.5*data$L + 0.7*data$P - 0.8*data$A))
+
+random <- runif(1000, 0, 1)
+model <- glm(Y ~ A + P, data = data, family = "binomial")
+perfect <- data$Y
+
+CFscore(
+  object = list("ran" = random, "mod" = model, "per" = perfect),
+  data = data,
+  outcome_formula = Y ~ 1,
+  treatment_formula = A ~ L,
+  treatment_of_interest = 0,
+)
 }
