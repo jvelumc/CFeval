@@ -3,3 +3,4 @@
 S3method(plot,CFscore)
 S3method(print,CFscore)
 export(CFscore)
+export(observed_score)
