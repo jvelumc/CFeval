@@ -2,7 +2,7 @@
 title: "CFeval"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{basics}
+  %\VignetteIndexEntry{Right censored outcome data}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -17,7 +17,7 @@ comment = "#>"
 ```{r setup}
 library(CFeval)
 library(survival)
-set.seed(1)
+set.seed(123)
 ```
 
 # Evaluating performance for time to event data.
@@ -28,8 +28,6 @@ Just like in the binary outcome, a IPT-weighted pseudopopulation is built which 
 ## Example 1, non informative censoring
 
 ```{r}
-set.seed(1)
-
 simulate_time_to_event <- function(n, constant_baseline_haz, LP) {
   u <- runif(n)
   -log(u) / (constant_baseline_haz * exp(LP))
@@ -98,8 +96,8 @@ For this example, we validate these models on the same data that was used to dev
 
 To account for the time to event data, the left hand side of the outcome_formula argument should be a survival object, and the right hand side the formula used to fit the IPCW model. In this case, we used non-informative censoring, so we leave the right hand side just $1$, and we specify to use the kaplan-meier to compute the ipc-weights.  
 
-```{r}
-CFscore(
+```{r, fig.width=6, fig.height=6}
+cfs <- CFscore(
   object = list("naive model" = model_naive, "causal model" = model_causal),
   data = data,
   outcome_formula = Surv(time, status) ~ 1,
@@ -108,4 +106,40 @@ CFscore(
   time_horizon = 5,
   cens.model = "KM"
 )
+cfs
 ```
+
+## Example 2, informative censoring
+We can also account for informative censoring.
+
+```{r}
+data$censortime <- simulate_time_to_event(n, 0.04, 0.1*data$L1 + 0.5*data$P2)
+summary(data$censortime)
+
+data$status <- ifelse(data$time_a <= data$censortime, TRUE, FALSE)
+data$time <- ifelse(data$status == TRUE,
+                      data$time_a,
+                      data$censortime)
+
+summary(data$time)
+summary(data$status)
+```
+
+
+We then set censoring method to "cox", and supply the formula needed for the censoring model as the right hand side of the outcome formula:
+
+```{r, fig.width=6, fig.height=6}
+CFscore(
+  object = list("naive model" = model_naive, "causal model" = model_causal),
+  data = data,
+  outcome_formula = Surv(time, status) ~ L1 + P2,
+  treatment_formula = A ~ L1 + L2,
+  treatment_of_interest = 1,
+  time_horizon = 5,
+  cens.model = "cox",
+  bootstrap = 100,
+  bootstrap_progress = FALSE
+)
+```
+
+
