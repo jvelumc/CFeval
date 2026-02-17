@@ -22,4 +22,104 @@ You can install the development version of CFeval from [GitHub](https://github.c
 devtools::install_github("jvelumc/CFeval")
 ```
 
+## Example
+
+Simulate example data for binary outcome $Y$ and point treatment $A$, with the relation between $A$ and $Y$ confounded by variable $L$. Variable $P$ is a prognostic variable for only the outcome. The treatment reduces the risk on a bad outcome ($Y = 1$) in this simulated example. 
+
+![Figure 1. DAG for toy example](man/figures/dag.png)
+
+```{r}
+n <- 1000
+
+df_dev <- data.frame(id = 1:n)
+df_dev$L <- rnorm(n)
+df_dev$A <- rbinom(n, 1, plogis(df_dev$L))
+df_dev$P <- rnorm(n)
+df_dev$Y <- rbinom(n, 1, plogis(0.5 + df_dev$L + 1.25 * df_dev$P - 0.6*df_dev$A))
+```
+
+We also need something to validate. We will create a couple of models using the development data.
+
+```{r}
+# naive model, not accounting for confounding variable L
+naive_model <- glm(Y ~ A + P, family = "binomial", data = df_dev)
+
+# model targeting untreated risk, not accounting for confounding
+naive_untreated_model <- glm(Y ~ P, family = "binomial", data = df_dev[df_dev$A == 0, ])
+
+# causal model, accounting for L by IP-weighting
+trt_model <- glm(A ~ L, family = "binomial", data = df_dev)
+propensity_score <- predict(trt_model, type = "response")
+df_dev$iptw <- 1 / ifelse(df_dev$A == 1, propensity_score, 1 - propensity_score)
+causal_model <- glm(Y ~ A + P, family = "binomial", data = df_dev, weights = iptw)
+
+# a model that randomly predicts something, not very good probably
+random_predictions <- runif(5000, 0, 1)
+```
+Note that according to the naive model, we should not treat anybody, as patients that get treated have a higher risk for the outcome. The causal model correctly infers that treatment benefits patients. 
+```{r}
+print(coefficients(naive_model))
+print(coefficients(causal_model))
+```
+
+We are now interested in how the models perform in an external validation dataset. This dataset can have a different causal structure from the original development dataset. In this example, we simulate that patients are treated more aggressively. The relation between the outcome and the other variables is the same.
+
+```{r}
+n <- 5000
+
+df_val <- data.frame(id = 1:n)
+df_val$L <- rnorm(n)
+df_val$A <- rbinom(n, 1, plogis(0.5 + df_val$L))
+df_val$P <- rnorm(n)
+df_val$Y <- rbinom(n, 1, plogis(0.5 + df_val$L + 1.25 * df_val$P - 0.6*df_val$A))
+```
+
+The question that we would like to have answered is the following: 
+
+How well does our prediction model perform if we were to treat nobody?
+
+The CFeval package aims to provide tools to answer questions like this. The main function ```CFscore()``` can be used for this.
+
+```{r}
+library(CFeval)
+
+CFscore(
+  object = list(
+    "random" = random_predictions,
+    "naive model" = naive_model,
+    "naive untreated model" = naive_untreated_model,
+    "causal model" = causal_model
+  ),
+  data = df_val, 
+  outcome_formula = Y ~ 1,
+  treatment_formula = A ~ L, 
+  treatment_of_interest = 0
+)
+```
+
+As we see, the causal model has best calibration and Brier score. 
+
+Note that the AUC of the naive models and the causal model are equal. AUC is driven entirely by how individuals' model predictions are ranked, not by the magnitude of the predictions. In this simple setting, P is the only variable driving prognostic differences between individuals (in a pseudopopulation where we counterfactually set everyone's treatment status to $0$). While the models have different coefficients for P, individuals are ranked in exactly the same way.
+
+$CFscore()$ also supports stabilized weights and bootstrapping for confidence intervals.
+Right censored survival data and cox models are also supported.
+
+```{r}
+CFscore(
+  object = list(
+    "random" = random_predictions,
+    "naive model" = naive_model,
+    "naive untreated model" = naive_untreated_model,
+    "causal model" = causal_model
+  ),
+  data = df_val, 
+  outcome_formula = Y ~ 1,
+  treatment_formula = A ~ L, 
+  treatment_of_interest = 0,
+  bootstrap = 50,
+  bootstrap_progress = FALSE,
+  stable_iptw = TRUE,
+  quiet = TRUE
+)
+```
 

@@ -7,7 +7,9 @@ pp <- function(...) {
 
 #' @export
 print.CFscore <- function(x, ...) {
-  assumptions(x)
+  if (x$quiet != TRUE) {
+    assumptions(x)
+  }
   numeric_metrics <- x$metrics[x$metrics != "calplot"]
 
   if (x$bootstrap_iterations != 0) {
@@ -51,13 +53,18 @@ plot.CFscore <- function(x, ...) {
     cex.sub = 0.8
   )
   graphics::abline(0, 1, col = "black")
-  colors <- palette.colors(n = length(models) + 1, recycle = TRUE)[-1]
+  colors <- adjustcolor(
+    palette.colors(n = length(models) + 1, recycle = TRUE)[-1],
+    alpha.f = 0.8
+  )
+
   for (i in seq_along(models)) {
     lines(
       x = x$score$calplot[["pred", models[i]]],
       y = x$score$calplot[["obs", models[i]]],
       type = "o",
-      col = colors[i]
+      col = colors[i],
+      lw = 2
     )
   }
   legend("topleft",
@@ -127,17 +134,17 @@ assumptions <- function(x) {
      " are sufficient to adjust for confounding and selection bias between
       treatment and outcome.")
 
-  pp("- Positivity (assess $weights for outliers)")
+  pp("- Positivity (assess $ipt$weights for outliers)")
 
   pp("- Consistency")
 
   pp("- No interference")
 
   pp("- Correctly specified propensity formula. Estimated treatment model is ",
-     print_model(x$ipt$model))
+     print_model(x$ipt$model), ". See also $ipt$model")
 
   if (x$outcome_type == "survival") {
-    pp("- Censoring is accounted for with")
+    pp("- Censoring is accounted for with ... ")
   }
 }
 

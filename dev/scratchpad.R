@@ -9,7 +9,7 @@ data$Y <- ifelse(data$A == 1, data$Y1, data$Y0)
 naive_perfect <- data$Y
 causal_perfect <- data$Y0
 
-CFscore(
+cfs <- CFscore(
   object = list("naive" = naive_perfect, "causal" = causal_perfect),
   data = data,
   outcome_formula = Y ~ 1,
