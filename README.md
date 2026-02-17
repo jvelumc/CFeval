@@ -23,6 +23,10 @@ You can install the development version of CFeval from
 devtools::install_github("jvelumc/CFeval")
 ```
 
+``` r
+library(CFeval)
+```
+
 ## Example
 
 Simulate example data for binary outcome $Y$ and point treatment $A$,
@@ -94,26 +98,69 @@ df_val$P <- rnorm(n)
 df_val$Y <- rbinom(n, 1, plogis(0.5 + df_val$L + 1.25 * df_val$P - 0.9*df_val$A))
 ```
 
+One option to validate the models would be to leave the data as it is,
+and compute the performance metrics on this observed dataset, where some
+patients were treated and others were not. This package has a function
+that can do this, but it is not recommended to use it. For demonstration
+purposes, we use it here nonetheless.
+
+``` r
+observed_score(
+  object = list(
+    "random" = random_predictions,
+    "naive model" = naive_model,
+    "causal model" = causal_model
+  ),
+  data = df_val, 
+  outcome_formula = Y ~ 1,
+  metrics = c("auc", "brier", "oeratio")
+)
+#> 
+#>         model   auc brier oeratio
+#>        random 0.508 0.327   0.996
+#>   naive model 0.775 0.195   0.970
+#>  causal model 0.725 0.213   1.066
+```
+
+From this it seems that the naive model performs better than the fancy
+causal model. These performance measures represent the performance of
+the models under the given treatment assignment.
+
+However, we are thinking of a scenario in which treatment assignment
+will be different in the future. For example, the models may be used to
+inform whether patients should receive treatment or not. For patients
+and clinicians, it is then important to know what their treated risk
+would be and their untreated risk.
+
+It is then important that these treated risks are accurate compared to
+the outcomes patients would get if they were to be treated, and that the
+untreated risks are accurate compared to the outcomes they would get if
+left untreated.
+
 The question that we would like to have answered is the following:
 
 How well does our prediction model perform if we were to treat nobody?
+And if we were to treat everybody?
 
-The CFeval package aims to provide tools to answer questions like this.
+The CFeval package aims to provide tools to answer questions like these.
 The main function `CFscore()` can be used for this. This function
 estimates several counterfactual performance measures in a validation
 dataset, printing by default the assumptions required for valid
-inference. The arguments supplied are the models and the validation
-data, a formula for which the left hand side denotes the outcome
-variable in the validation data, a treatment formula for which the left
-hand side denotes the treatment variable and the right hand side the
-confounders required to adjust for said treatment, and the hypothetical
-treatment option for which you want to know how well the model performs
-if everyone in the population was (counterfactually) assigned to that
+inference. The first argument is the object to validate. This can be a
+glm model, a coxph model for survival data, or a numeric vector
+corresponding to predicted risks, or a combination of these options.
+Other arguments supplied are the models and the validation data, a
+formula for which the left hand side denotes the outcome variable in the
+validation data, a treatment formula for which the left hand side
+denotes the treatment variable and the right hand side the confounders
+required to adjust for said treatment, and the hypothetical treatment
+option for which you want to know how well the model performs if
+everyone in the population was (counterfactually) assigned to that
 treatment.
 
-``` r
-library(CFeval)
+If nobody would have been treated:
 
+``` r
 CFscore(
   object = list(
     "random" = random_predictions,
@@ -144,7 +191,32 @@ CFscore(
 #>  causal model 0.752 0.198    1.01
 ```
 
-<img src="man/figures/README-unnamed-chunk-6-1.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-8-1.png" width="100%" />
+
+And similarly, if everybody would have been treated (not printing the
+assumptions and calibration plots again):
+
+``` r
+CFscore(
+  object = list(
+    "random" = random_predictions,
+    "naive model" = naive_model,
+    "causal model" = causal_model
+  ),
+  data = df_val, 
+  outcome_formula = Y ~ 1,
+  treatment_formula = A ~ L, 
+  treatment_of_interest = 0,
+  metrics = c("auc", "brier", "oeratio"),
+  quiet = TRUE
+)
+#> 
+#>         model   auc brier oeratio
+#>    null model 0.500 0.244    1.00
+#>        random 0.519 0.319    1.17
+#>   naive model 0.752 0.208    1.21
+#>  causal model 0.752 0.198    1.01
+```
 
 As we see, the causal model has best calibration and Brier score.
 
@@ -202,4 +274,4 @@ CFscore(
 #>  causal model    1.01 0.958  1.07
 ```
 
-<img src="man/figures/README-unnamed-chunk-7-1.png" width="100%" /><img src="man/figures/README-unnamed-chunk-7-2.png" width="100%" /><img src="man/figures/README-unnamed-chunk-7-3.png" width="100%" /><img src="man/figures/README-unnamed-chunk-7-4.png" width="100%" /><img src="man/figures/README-unnamed-chunk-7-5.png" width="100%" />
+<img src="man/figures/README-unnamed-chunk-10-1.png" width="100%" /><img src="man/figures/README-unnamed-chunk-10-2.png" width="100%" /><img src="man/figures/README-unnamed-chunk-10-3.png" width="100%" /><img src="man/figures/README-unnamed-chunk-10-4.png" width="100%" /><img src="man/figures/README-unnamed-chunk-10-5.png" width="100%" />

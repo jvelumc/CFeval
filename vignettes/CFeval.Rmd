@@ -16,89 +16,96 @@ comment = "#>"
 
 ```{r setup}
 library(CFeval)
+library(survival)
 set.seed(1)
 ```
 
-# Toy example
+# Evaluating performance for time to event data.
+The README covers binary outcome. This vignette demonstrates how to estimate counterfactual performance metrics in right censored survival data. 
 
-## Model development
-In this toy example, we simulate simulate data for binary outcome Y and (point) treatment A, with the relation between A and Y confounded by a variable L. Variable P is a prognostic variable for only the outcome. The treatment reduces the risk on a bad outcome (Y = 1) in this simulated example. 
+Just like in the binary outcome, a IPT-weighted pseudopopulation is built which represents a situation in which everybody gets the treatment of interest. On top of that, inverse probability of censor weights are used such that the pseudopopulation also represents a situation where nobody gets censored. 
+
+## Example 1, non informative censoring
 
 ```{r}
-simulate_data <- function(n) {
-  data <- data.frame(id = 1:n)
-  data$L <- rnorm(n)
-  data$A <- rbinom(n, 1, plogis(data$L))
-  data$P <- rnorm(n)
-  data$Y <- rbinom(n, 1, plogis(0.5 + data$L + 1.25 * data$P - 0.6 * data$A))
-  data
+set.seed(1)
+
+simulate_time_to_event <- function(n, constant_baseline_haz, LP) {
+  u <- runif(n)
+  -log(u) / (constant_baseline_haz * exp(LP))
 }
 
-df_dev <- simulate_data(1000)
+horizon <- 10
+n <- 10000
+data <- data.frame(
+  L1 = rnorm(n, mean = 0),
+  L2 = rbinom(n, 1, 0.5),
+  P1 = rnorm(n, mean = 0),
+  P2 = rbinom(n, 1, 0.5)
+)
+data$A <- rbinom(n, 1, plogis(0.2 + 1.2*data$L1 - 0.3*data$L2))
 
-head(df_dev)
+LP <- 0.8*data$L1 + 0.3*data$L2 + 0.5*data$P1 + 0.7*data$P2
+
+# time0 is the uncensored untreated survival time,
+# time1 is the uncensored treated   survival time 
+data$time0 <- simulate_time_to_event(n, 0.04, LP)
+data$time1 <- simulate_time_to_event(n, 0.04, LP - 0.5)
+
+summary(data$time0)
+summary(data$time1)
+
+# time_a is the uncensored survival time corresponding to assigned treatment 
+data$time_a <- ifelse(data$A == 1, data$time1, data$time0)
+
+# uninformative censoring
+data$censortime <- simulate_time_to_event(n, 0.02, 1)
+summary(data$censortime)
+
+data$status <- ifelse(data$time_a <= data$censortime, TRUE, FALSE)
+data$time <- ifelse(data$status == TRUE,
+                      data$time_a,
+                      data$censortime)
+
+summary(data$time)
+summary(data$status)
 ```
-
-Fitting a (logistic regression) model on this data without accounting for the confounder L results in a model where treatment apparently increases the risk on the outcome
+Fit some models to validate:
 
 ```{r}
-naive_model <- glm(Y ~ P + A, family = "binomial", data = df_dev)
-naive_model$coefficients
-```
-Instead, we could adjust for the confounder L via (for example) inverse probability of treatment weighting (iptw). [ref]
-
-```{r}
-propensity_model <- glm(A ~ L, family = "binomial", data = df_dev)
-propensity_score <- predict(propensity_model, type = "response")
-iptw <- 1 / ifelse(df_dev$A == 1, propensity_score, 1 - propensity_score)
-
-causal_model <- glm(Y ~ P + A, family = "binomial", data = df_dev, weights = iptw)
-coefficients(causal_model)
-```
-From now on we assume some model has been developed (be it a good or a bad one), and we want to know if it provides accurate estimates of the counterfactual risk on outcome under both treatment options a = 1 and a = 0.
-
-## Validation
-
-We assume there is some validation dataset, which are independent from data used for development of the models. This package aims to help the user in assessing how well the predictions would match the validation data if all individuals had followed a certain treatment option of interest. 
-Note that the causal structure of the validation data set may be different from the causal structure of the development data set, in which the model was trained. A model may for example be developed from RCT data in which treatment was randomly assigned, while we are validating in an observational cohort in which treatment is confounded by some variables. 
-
-Let's first simulate some validation data set. In this example, it is generated using the same mechanism as the development data. It has 5000 rows instead of 1000.
-```{r}
-df_val <- simulate_data(n = 5000)
-head(df_val)
-```
-The main function CFscore() estimates several counterfactual performance measures in a validation dataset, printing by default the assumptions required for valid inference. The arguments supplied are the models and the validation data, a formula for which the left hand side denotes the outcome variable in the validation data, a treatment formula for which the left hand side denotes the treatment variable and the right hand side the confounders required to adjust for said treatment, and the hypothetical treatment option for which you want to know how well the model performs if everyone in the population was (counterfactually) assigned to that treatment. 
-
-```{r, fig.dim = c(4,4)}
-cfscore <- CFscore(
-  object = list("naive model" = naive_model, "causal model" = causal_model),
-  data = df_val,
-  outcome_formula = Y ~ 1,
-  treatment_formula = A ~ L,
-  treatment_of_interest = 1,
-  metrics = c("auc", "brier", "oeratio", "calplot")
+model_naive <- coxph(
+  formula = Surv(time, status) ~ P1 + P2 + A,
+  data = data
 )
 
-cfscore
+coefficients(model_naive)
+
+trt_model <- glm(A ~ L1 + L2, family = "binomial", data = data)
+propensity_score <- predict(trt_model, type = "response")
+
+data$iptw <- 1 / ifelse(data$A == 1, propensity_score, 1 - propensity_score)
+
+model_causal <- coxph(
+  formula = Surv(time, status) ~ P1 + P2 + A,
+  data = data,
+  weights = iptw
+)
+
+coefficients(model_causal)
 ```
-* Note that the AUC of the naive model is equal to the causal model. AUC is driven entirely by how individuals are ranked, not by the magnitude of the predicted probabilities. In this simple setting, P is the only variable driving prognostic differences between individuals in the prediction models. Even though IPTW changes the estimated coefficients, it does not change the direction of the association with P. When predicting outcomes under treatment for everyone, higher values of P still correspond to higher predicted risk in both models, so individuals are ranked in exactly the same way. As a result, both models produce identical AUCs.
 
-## Extra options
+For this example, we validate these models on the same data that was used to develop them. We are interested in the counterfactual performance if every patient were to be assigned to treatment and remained uncensored, with a prediction horizon of 5 years. 
 
-### Bootstrap
-We can also run a bootstrap to estimate 95\% confidence intervals around the performance metrics.
+To account for the time to event data, the left hand side of the outcome_formula argument should be a survival object, and the right hand side the formula used to fit the IPCW model. In this case, we used non-informative censoring, so we leave the right hand side just $1$, and we specify to use the kaplan-meier to compute the ipc-weights.  
 
-```{r, fig.dim = c(4,4)}
+```{r}
 CFscore(
-  object = list("naive model" = naive_model, "causal model" = causal_model),
-  data = df_val,
-  outcome_formula = Y ~ 1,
-  treatment_formula = A ~ L,
+  object = list("naive model" = model_naive, "causal model" = model_causal),
+  data = data,
+  outcome_formula = Surv(time, status) ~ 1,
+  treatment_formula = A ~ L1 + L2,
   treatment_of_interest = 1,
-  metrics = c("auc", "brier", "oeratio", "calplot"),
-  bootstrap = 200,
-  bootstrap_progress = FALSE
+  time_horizon = 5,
+  cens.model = "KM"
 )
 ```
-
-Further options are to use stabilized iptw, and time to event outcomes.
