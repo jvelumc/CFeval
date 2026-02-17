@@ -7,6 +7,14 @@ Authors@R: c(
       "Jasper", "van Egeraat",
       email = "j.w.a.van_egeraat@lumc.nl",
       role = c("aut", "cre")
+    ),
+    person(
+      "Nan", "van Geloven",
+      role = "aut"
+    ),
+    person(
+      "Ruth", "Keogh",
+      role = "aut"
     )
   )
 Description: Predictions under interventions are estimates of what a subject's risk would be 
