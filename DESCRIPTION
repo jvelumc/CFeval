@@ -28,7 +28,8 @@ LazyData: true
 RoxygenNote: 7.3.3
 Imports: 
     stats,
-    survival
+    survival,
+    prodlim
 Depends: 
     R (>= 3.5)
 URL: https://jvelumc.github.io/CFeval/
