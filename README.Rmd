@@ -111,7 +111,7 @@ CFscore(
   outcome_formula = Y ~ 1,
   treatment_formula = A ~ L, 
   treatment_of_interest = 0,
-  bootstrap = 50,
+  bootstrap = 200,
   bootstrap_progress = FALSE,
   stable_iptw = TRUE,
   quiet = TRUE
