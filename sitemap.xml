@@ -1,10 +1,12 @@
 <urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
 <url><loc>https://jvelumc.github.io/CFeval/404.html</loc></url>
 <url><loc>https://jvelumc.github.io/CFeval/LICENSE.html</loc></url>
+<url><loc>https://jvelumc.github.io/CFeval/articles/CFeval.html</loc></url>
+<url><loc>https://jvelumc.github.io/CFeval/articles/index.html</loc></url>
 <url><loc>https://jvelumc.github.io/CFeval/authors.html</loc></url>
 <url><loc>https://jvelumc.github.io/CFeval/index.html</loc></url>
 <url><loc>https://jvelumc.github.io/CFeval/reference/CFscore.html</loc></url>
 <url><loc>https://jvelumc.github.io/CFeval/reference/index.html</loc></url>
-<url><loc>https://jvelumc.github.io/CFeval/reference/ip_weights.html</loc></url>
+<url><loc>https://jvelumc.github.io/CFeval/reference/ipt_weights.html</loc></url>
 </urlset>
 

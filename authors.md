@@ -1,0 +1,19 @@
+# Authors and Citation
+
+## Authors
+
+- **Jasper van Egeraat**. Author, maintainer.
+
+## Citation
+
+van Egeraat J (2026). *CFeval: Evaluation of Counterfactual
+Performance*. R package version 0.0.1,
+<https://jvelumc.github.io/CFeval/>.
+
+    @Manual{,
+      title = {CFeval: Evaluation of Counterfactual Performance},
+      author = {Jasper {van Egeraat}},
+      year = {2026},
+      note = {R package version 0.0.1},
+      url = {https://jvelumc.github.io/CFeval/},
+    }
