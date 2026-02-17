@@ -42,13 +42,16 @@ example</figcaption>
 </figure>
 
 ``` r
-n <- 1000
+simulate_data <- function(n, seed) {
+  data <- data.frame(id = 1:n)
+  data$L <- rnorm(n)
+  data$A <- rbinom(n, 1, plogis(2*data$L))
+  data$P <- rnorm(n)
+  data$Y <- rbinom(n, 1, plogis(0.5 + data$L + 1.25 * data$P - 0.9*data$A))
+  data
+}
 
-df_dev <- data.frame(id = 1:n)
-df_dev$L <- rnorm(n)
-df_dev$A <- rbinom(n, 1, plogis(2*df_dev$L))
-df_dev$P <- rnorm(n)
-df_dev$Y <- rbinom(n, 1, plogis(0.5 + df_dev$L + 1.25 * df_dev$P - 0.9*df_dev$A))
+df_dev <- simulate_data(n = 2000, seed = 1)
 ```
 
 We also need something to validate. We will create a couple of models
@@ -76,26 +79,19 @@ model correctly infers that treatment benefits patients.
 ``` r
 print(coefficients(naive_model))
 #> (Intercept)           A           P 
-#> -0.09438097  0.25710271  0.98079027
+#>  -0.1088558   0.3407801   1.1878727
 print(coefficients(causal_model))
 #> (Intercept)           A           P 
-#>   0.3569683  -0.9224453   0.9183316
+#>   0.3862409  -0.6863653   1.1949409
 ```
 
 We are now interested in how the models perform in an external
 validation dataset. This dataset can have a different causal structure
-from the original development dataset. In this example, we simulate that
-patients are treated more aggressively. The relation between the outcome
-and the other variables is the same.
+from the original development dataset. In this example, the data is
+simulated in the same way.
 
 ``` r
-n <- 5000
-
-df_val <- data.frame(id = 1:n)
-df_val$L <- rnorm(n)
-df_val$A <- rbinom(n, 1, plogis(0.5 + 2*df_val$L))
-df_val$P <- rnorm(n)
-df_val$Y <- rbinom(n, 1, plogis(0.5 + df_val$L + 1.25 * df_val$P - 0.9*df_val$A))
+df_val <- simulate_data(n = 5000, seed = 2)
 ```
 
 One option to validate the models would be to leave the data as it is,
@@ -117,9 +113,9 @@ observed_score(
 )
 #> 
 #>         model   auc brier oeratio
-#>        random 0.508 0.327   0.996
-#>   naive model 0.775 0.195   0.970
-#>  causal model 0.725 0.213   1.066
+#>        random 0.505 0.331   1.010
+#>   naive model 0.764 0.198   0.998
+#>  causal model 0.741 0.207   1.001
 ```
 
 From this it seems that the naive model performs better than the fancy
@@ -182,19 +178,19 @@ CFscore(
 #> - Consistency
 #> - No interference
 #> - Correctly specified propensity formula. Estimated treatment model is
-#>  logit(A) = 0.48 + 1.99*L. See also $ipt$model
+#>  logit(A) = -0.07 + 2.05*L. See also $ipt$model
 #> 
 #>         model   auc brier oeratio
-#>    null model 0.500 0.244    1.00
-#>        random 0.519 0.319    1.17
-#>   naive model 0.752 0.208    1.21
-#>  causal model 0.752 0.198    1.01
+#>    null model 0.500 0.245    1.00
+#>        random 0.496 0.335    1.14
+#>   naive model 0.766 0.204    1.20
+#>  causal model 0.766 0.196    1.00
 ```
 
 <img src="man/figures/README-unnamed-chunk-8-1.png" width="100%" />
 
 And similarly, if everybody would have been treated (not printing the
-assumptions and calibration plots again):
+assumptions again):
 
 ``` r
 CFscore(
@@ -207,16 +203,17 @@ CFscore(
   outcome_formula = Y ~ 1,
   treatment_formula = A ~ L, 
   treatment_of_interest = 1,
-  metrics = c("auc", "brier", "oeratio"),
   quiet = TRUE
 )
 #> 
 #>         model   auc brier oeratio
-#>    null model 0.500 0.246   1.000
-#>        random 0.518 0.323   0.886
-#>   naive model 0.770 0.202   0.827
-#>  causal model 0.770 0.198   1.154
+#>    null model 0.500 0.241   1.000
+#>        random 0.533 0.314   0.812
+#>   naive model 0.739 0.218   0.751
+#>  causal model 0.739 0.202   0.930
 ```
+
+<img src="man/figures/README-unnamed-chunk-9-1.png" width="100%" />
 
 As we see, the causal model has best calibration and Brier score.
 
@@ -243,7 +240,7 @@ CFscore(
   outcome_formula = Y ~ 1,
   treatment_formula = A ~ L, 
   treatment_of_interest = 0,
-  bootstrap = 200,
+  bootstrap = 50,
   bootstrap_progress = FALSE,
   stable_iptw = TRUE,
   quiet = TRUE
@@ -253,25 +250,25 @@ CFscore(
 #> 
 #>         model   auc lower upper
 #>    null model 0.500 0.500 0.500
-#>        random 0.519 0.486 0.557
-#>   naive model 0.752 0.722 0.785
-#>  causal model 0.752 0.722 0.785
+#>        random 0.496 0.471 0.526
+#>   naive model 0.766 0.740 0.801
+#>  causal model 0.766 0.740 0.801
 #> 
 #> brier
 #> 
 #>         model brier lower upper
-#>    null model 0.244 0.238 0.248
-#>        random 0.319 0.300 0.338
-#>   naive model 0.208 0.195 0.221
-#>  causal model 0.198 0.189 0.208
+#>    null model 0.245 0.241 0.249
+#>        random 0.335 0.316 0.351
+#>   naive model 0.204 0.189 0.215
+#>  causal model 0.196 0.181 0.208
 #> 
 #> oeratio
 #> 
 #>         model oeratio lower upper
-#>    null model    1.00 0.948  1.06
-#>        random    1.17 1.107  1.24
-#>   naive model    1.21 1.147  1.28
-#>  causal model    1.01 0.958  1.07
+#>    null model    1.00 0.947  1.06
+#>        random    1.14 1.083  1.21
+#>   naive model    1.20 1.144  1.27
+#>  causal model    1.00 0.949  1.05
 ```
 
 <img src="man/figures/README-unnamed-chunk-10-1.png" width="100%" /><img src="man/figures/README-unnamed-chunk-10-2.png" width="100%" /><img src="man/figures/README-unnamed-chunk-10-3.png" width="100%" /><img src="man/figures/README-unnamed-chunk-10-4.png" width="100%" /><img src="man/figures/README-unnamed-chunk-10-5.png" width="100%" />

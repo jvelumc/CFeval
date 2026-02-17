@@ -33,13 +33,16 @@ Simulate example data for binary outcome $Y$ and point treatment $A$, with the r
 ![Figure 1. DAG for toy example](man/figures/dag.png)
 
 ```{r}
-n <- 1000
+simulate_data <- function(n, seed) {
+  data <- data.frame(id = 1:n)
+  data$L <- rnorm(n)
+  data$A <- rbinom(n, 1, plogis(2*data$L))
+  data$P <- rnorm(n)
+  data$Y <- rbinom(n, 1, plogis(0.5 + data$L + 1.25 * data$P - 0.9*data$A))
+  data
+}
 
-df_dev <- data.frame(id = 1:n)
-df_dev$L <- rnorm(n)
-df_dev$A <- rbinom(n, 1, plogis(2*df_dev$L))
-df_dev$P <- rnorm(n)
-df_dev$Y <- rbinom(n, 1, plogis(0.5 + df_dev$L + 1.25 * df_dev$P - 0.9*df_dev$A))
+df_dev <- simulate_data(n = 2000, seed = 1)
 ```
 
 We also need something to validate. We will create a couple of models using the development data.
@@ -63,16 +66,10 @@ print(coefficients(naive_model))
 print(coefficients(causal_model))
 ```
 
-We are now interested in how the models perform in an external validation dataset. This dataset can have a different causal structure from the original development dataset. In this example, we simulate that patients are treated more aggressively. The relation between the outcome and the other variables is the same.
+We are now interested in how the models perform in an external validation dataset. This dataset can have a different causal structure from the original development dataset. In this example, the data is simulated in the same way.
 
 ```{r}
-n <- 5000
-
-df_val <- data.frame(id = 1:n)
-df_val$L <- rnorm(n)
-df_val$A <- rbinom(n, 1, plogis(0.5 + 2*df_val$L))
-df_val$P <- rnorm(n)
-df_val$Y <- rbinom(n, 1, plogis(0.5 + df_val$L + 1.25 * df_val$P - 0.9*df_val$A))
+df_val <- simulate_data(n = 5000, seed = 2)
 ```
 
 One option to validate the models would be to leave the data as it is, and compute the performance metrics on this observed dataset, where some patients were treated and others were not. This package has a function that can do this, but it is not recommended to use it. For demonstration purposes, we use it here nonetheless. 
@@ -117,7 +114,7 @@ CFscore(
 )
 ```
 
-And similarly, if everybody would have been treated (not printing the assumptions and calibration plots again):
+And similarly, if everybody would have been treated (not printing the assumptions again):
 ```{r}
 CFscore(
   object = list(
@@ -129,7 +126,6 @@ CFscore(
   outcome_formula = Y ~ 1,
   treatment_formula = A ~ L, 
   treatment_of_interest = 1,
-  metrics = c("auc", "brier", "oeratio"),
   quiet = TRUE
 )
 ```
@@ -152,7 +148,7 @@ CFscore(
   outcome_formula = Y ~ 1,
   treatment_formula = A ~ L, 
   treatment_of_interest = 0,
-  bootstrap = 200,
+  bootstrap = 50,
   bootstrap_progress = FALSE,
   stable_iptw = TRUE,
   quiet = TRUE
