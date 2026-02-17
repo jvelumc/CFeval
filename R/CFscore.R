@@ -27,7 +27,7 @@ library(survival)
 #' @param treatment_of_interest A treatment level for which the counterfactual
 #'   perormance measures should be evaluated.
 #' @param metrics A character vector specifying which performance metrics to be
-#'   computed. Options are c("auc", "brier", "oeratio", "oeratio_pp",
+#'   computed. Options are c("auc", "brier", "oeratio",
 #'   "calplot"). See details.
 #' @param time_horizon For time to event data, the prediction horizon of
 #'   interest.
@@ -62,14 +62,10 @@ library(survival)
 #'
 #'   Brier score is defined as 1 / sum(iptw) sum(predictions_i - outcome_i)^2
 #'
-#'   oeratio and oeratio_pp represent the observed/expected ratio, where
-#'   observed is the mean of the outcomes in the pseudopopulation. For oeratio,
-#'   the expected is the mean of the predictions in the original observed
-#'   population. For oeratio_pp, expected is the mean of the predictions in the
-#'   pseudopopulation. A perfect model will have oeratio_pp equal to exactly
-#'   one, but not necessarily oeratio equal to one, if the size of the
-#'   (weighted) pseudopopulation is not exactly equal to the size of the
-#'   original population.
+#'   oeratio represents the observed/expected ratio, where
+#'   observed is the mean of the outcomes in the pseudopopulation.
+#'   The expected is the mean of the predictions in the original observed
+#'   population.
 #'
 #' @export
 #'
@@ -94,7 +90,7 @@ library(survival)
 
 CFscore <- function(object, data, outcome_formula, treatment_formula,
                     treatment_of_interest,
-                    metrics = c("auc", "brier", "oeratio", "oeratio_pp", "calplot"),
+                    metrics = c("auc", "brier", "oeratio", "calplot"),
                     time_horizon, cens.model = "cox",
                     null.model = TRUE, stable_iptw = FALSE,
                     bootstrap = 0, bootstrap_progress = TRUE,
