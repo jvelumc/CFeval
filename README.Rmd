@@ -33,9 +33,9 @@ n <- 1000
 
 df_dev <- data.frame(id = 1:n)
 df_dev$L <- rnorm(n)
-df_dev$A <- rbinom(n, 1, plogis(df_dev$L))
+df_dev$A <- rbinom(n, 1, plogis(2*df_dev$L))
 df_dev$P <- rnorm(n)
-df_dev$Y <- rbinom(n, 1, plogis(0.5 + df_dev$L + 1.25 * df_dev$P - 0.6*df_dev$A))
+df_dev$Y <- rbinom(n, 1, plogis(0.5 + df_dev$L + 1.25 * df_dev$P - 0.9*df_dev$A))
 ```
 
 We also need something to validate. We will create a couple of models using the development data.
@@ -66,9 +66,9 @@ n <- 5000
 
 df_val <- data.frame(id = 1:n)
 df_val$L <- rnorm(n)
-df_val$A <- rbinom(n, 1, plogis(0.5 + df_val$L))
+df_val$A <- rbinom(n, 1, plogis(0.5 + 2*df_val$L))
 df_val$P <- rnorm(n)
-df_val$Y <- rbinom(n, 1, plogis(0.5 + df_val$L + 1.25 * df_val$P - 0.6*df_val$A))
+df_val$Y <- rbinom(n, 1, plogis(0.5 + df_val$L + 1.25 * df_val$P - 0.9*df_val$A))
 ```
 
 The question that we would like to have answered is the following: 

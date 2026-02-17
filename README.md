@@ -42,9 +42,9 @@ n <- 1000
 
 df_dev <- data.frame(id = 1:n)
 df_dev$L <- rnorm(n)
-df_dev$A <- rbinom(n, 1, plogis(df_dev$L))
+df_dev$A <- rbinom(n, 1, plogis(2*df_dev$L))
 df_dev$P <- rnorm(n)
-df_dev$Y <- rbinom(n, 1, plogis(0.5 + df_dev$L + 1.25 * df_dev$P - 0.6*df_dev$A))
+df_dev$Y <- rbinom(n, 1, plogis(0.5 + df_dev$L + 1.25 * df_dev$P - 0.9*df_dev$A))
 ```
 
 We also need something to validate. We will create a couple of models
@@ -72,10 +72,10 @@ model correctly infers that treatment benefits patients.
 ``` r
 print(coefficients(naive_model))
 #> (Intercept)           A           P 
-#>   0.1167948   0.2568862   0.9279159
+#> -0.09438097  0.25710271  0.98079027
 print(coefficients(causal_model))
 #> (Intercept)           A           P 
-#>   0.4085166  -0.5148785   0.9022130
+#>   0.3569683  -0.9224453   0.9183316
 ```
 
 We are now interested in how the models perform in an external
@@ -89,9 +89,9 @@ n <- 5000
 
 df_val <- data.frame(id = 1:n)
 df_val$L <- rnorm(n)
-df_val$A <- rbinom(n, 1, plogis(0.5 + df_val$L))
+df_val$A <- rbinom(n, 1, plogis(0.5 + 2*df_val$L))
 df_val$P <- rnorm(n)
-df_val$Y <- rbinom(n, 1, plogis(0.5 + df_val$L + 1.25 * df_val$P - 0.6*df_val$A))
+df_val$Y <- rbinom(n, 1, plogis(0.5 + df_val$L + 1.25 * df_val$P - 0.9*df_val$A))
 ```
 
 The question that we would like to have answered is the following:
@@ -125,13 +125,13 @@ CFscore(
 #> - Consistency
 #> - No interference
 #> - Correctly specified propensity formula. Estimated treatment model is
-#>  logit(A) = 0.49 + 0.96*L. See also $ipt$model
+#>  logit(A) = 0.48 + 1.99*L. See also $ipt$model
 #> 
 #>         model   auc brier oeratio
-#>    null model 0.500 0.242    1.00
-#>        random 0.512 0.327    1.19
-#>   naive model 0.760 0.199    1.12
-#>  causal model 0.760 0.195    1.01
+#>    null model 0.500 0.244    1.00
+#>        random 0.519 0.319    1.17
+#>   naive model 0.752 0.208    1.21
+#>  causal model 0.752 0.198    1.01
 ```
 
 <img src="man/figures/README-unnamed-chunk-6-1.png" width="100%" />
@@ -171,25 +171,25 @@ CFscore(
 #> 
 #>         model   auc lower upper
 #>    null model 0.500 0.500 0.500
-#>        random 0.512 0.479 0.540
-#>   naive model 0.760 0.726 0.782
-#>  causal model 0.760 0.726 0.782
+#>        random 0.519 0.481 0.569
+#>   naive model 0.752 0.717 0.786
+#>  causal model 0.752 0.717 0.786
 #> 
 #> brier
 #> 
 #>         model brier lower upper
-#>    null model 0.242 0.237 0.245
-#>        random 0.327 0.312 0.348
-#>   naive model 0.199 0.192 0.209
-#>  causal model 0.195 0.187 0.204
+#>    null model 0.244 0.237 0.248
+#>        random 0.319 0.296 0.341
+#>   naive model 0.208 0.194 0.223
+#>  causal model 0.198 0.189 0.208
 #> 
 #> oeratio
 #> 
 #>         model oeratio lower upper
-#>    null model    1.00 0.977  1.05
-#>        random    1.19 1.147  1.25
-#>   naive model    1.12 1.100  1.18
-#>  causal model    1.01 0.984  1.06
+#>    null model    1.00 0.957  1.07
+#>        random    1.17 1.114  1.26
+#>   naive model    1.21 1.159  1.29
+#>  causal model    1.01 0.968  1.08
 ```
 
 <img src="man/figures/README-unnamed-chunk-7-1.png" width="100%" /><img src="man/figures/README-unnamed-chunk-7-2.png" width="100%" /><img src="man/figures/README-unnamed-chunk-7-3.png" width="100%" /><img src="man/figures/README-unnamed-chunk-7-4.png" width="100%" /><img src="man/figures/README-unnamed-chunk-7-5.png" width="100%" />
