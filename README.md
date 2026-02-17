@@ -99,7 +99,17 @@ The question that we would like to have answered is the following:
 How well does our prediction model perform if we were to treat nobody?
 
 The CFeval package aims to provide tools to answer questions like this.
-The main function `CFscore()` can be used for this.
+The main function `CFscore()` can be used for this. This function
+estimates several counterfactual performance measures in a validation
+dataset, printing by default the assumptions required for valid
+inference. The arguments supplied are the models and the validation
+data, a formula for which the left hand side denotes the outcome
+variable in the validation data, a treatment formula for which the left
+hand side denotes the treatment variable and the right hand side the
+confounders required to adjust for said treatment, and the hypothetical
+treatment option for which you want to know how well the model performs
+if everyone in the population was (counterfactually) assigned to that
+treatment.
 
 ``` r
 library(CFeval)
