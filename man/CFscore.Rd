@@ -10,7 +10,7 @@ CFscore(
   outcome_formula,
   treatment_formula,
   treatment_of_interest,
-  metrics = c("auc", "brier", "oeratio", "oeratio_pp", "calplot"),
+  metrics = c("auc", "brier", "oeratio", "calplot"),
   time_horizon,
   cens.model = "cox",
   null.model = TRUE,
@@ -53,7 +53,7 @@ is ignored.}
 perormance measures should be evaluated.}
 
 \item{metrics}{A character vector specifying which performance metrics to be
-computed. Options are c("auc", "brier", "oeratio", "oeratio_pp",
+computed. Options are c("auc", "brier", "oeratio",
 "calplot"). See details.}
 
 \item{time_horizon}{For time to event data, the prediction horizon of
@@ -101,26 +101,24 @@ auc is area under the (ROC) curve, estimated ...
 
   Brier score is defined as 1 / sum(iptw) sum(predictions_i - outcome_i)^2
 
-  oeratio and oeratio_pp represent the observed/expected ratio, where
-  observed is the mean of the outcomes in the pseudopopulation. For oeratio,
-  the expected is the mean of the predictions in the original observed
-  population. For oeratio_pp, expected is the mean of the predictions in the
-  pseudopopulation. A perfect model will have oeratio_pp equal to exactly
-  one, but not necessarily oeratio equal to one, if the size of the
-  (weighted) pseudopopulation is not exactly equal to the size of the
-  original population.
+  oeratio represents the observed/expected ratio, where
+  observed is the mean of the outcomes in the pseudopopulation.
+  The expected is the mean of the predictions in the original observed
+  population.
 }
 \examples{
-data <- data.frame(L = rnorm(1000), P = rnorm(1000))
-data$A <- rbinom(1000, 1, plogis(L))
-data$Y <- rbinom(1000, 1, plogis(0.1 + 0.5*data$L + 0.7*data$P - 0.8*data$A))
+n <- 1000
 
-random <- runif(1000, 0, 1)
+data <- data.frame(L = rnorm(n), P = rnorm(n))
+data$A <- rbinom(n, 1, plogis(data$L))
+data$Y <- rbinom(n, 1, plogis(0.1 + 0.5*data$L + 0.7*data$P - 2*data$A))
+
+random <- runif(n, 0, 1)
 model <- glm(Y ~ A + P, data = data, family = "binomial")
-perfect <- data$Y
+naive_perfect <- data$Y
 
 CFscore(
-  object = list("ran" = random, "mod" = model, "per" = perfect),
+  object = list("ran" = random, "mod" = model, "per" = naive_perfect),
   data = data,
   outcome_formula = Y ~ 1,
   treatment_formula = A ~ L,
