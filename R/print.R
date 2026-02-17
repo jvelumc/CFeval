@@ -54,7 +54,7 @@ plot.CFscore <- function(x, ...) {
   )
   graphics::abline(0, 1, col = "black")
   colors <- adjustcolor(
-    palette.colors(n = length(models) + 1, recycle = TRUE)[-1],
+    rep(palette()[-1], length.out = length(models)),
     alpha.f = 0.8
   )
 
