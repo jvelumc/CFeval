@@ -124,7 +124,7 @@ observed_score(
 
 From this it seems that the naive model performs better than the fancy
 causal model. These performance measures represent the performance of
-the models under the given treatment assignment.
+the models under the given treatment assignment strategy.
 
 However, we are thinking of a scenario in which treatment assignment
 will be different in the future. For example, the models may be used to
@@ -206,16 +206,16 @@ CFscore(
   data = df_val, 
   outcome_formula = Y ~ 1,
   treatment_formula = A ~ L, 
-  treatment_of_interest = 0,
+  treatment_of_interest = 1,
   metrics = c("auc", "brier", "oeratio"),
   quiet = TRUE
 )
 #> 
 #>         model   auc brier oeratio
-#>    null model 0.500 0.244    1.00
-#>        random 0.519 0.319    1.17
-#>   naive model 0.752 0.208    1.21
-#>  causal model 0.752 0.198    1.01
+#>    null model 0.500 0.246   1.000
+#>        random 0.518 0.323   0.886
+#>   naive model 0.770 0.202   0.827
+#>  causal model 0.770 0.198   1.154
 ```
 
 As we see, the causal model has best calibration and Brier score.

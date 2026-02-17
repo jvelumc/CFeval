@@ -89,7 +89,7 @@ observed_score(
   metrics = c("auc", "brier", "oeratio")
 )
 ```
-From this it seems that the naive model performs better than the fancy causal model. These performance measures represent the performance of the models under the given treatment assignment.
+From this it seems that the naive model performs better than the fancy causal model. These performance measures represent the performance of the models under the given treatment assignment strategy.
 
 However, we are thinking of a scenario in which treatment assignment will be different in the future. For example, the models may be used to inform whether patients should receive treatment or not. For patients and clinicians, it is then important to know what their treated risk would be and their untreated risk. 
 
@@ -128,7 +128,7 @@ CFscore(
   data = df_val, 
   outcome_formula = Y ~ 1,
   treatment_formula = A ~ L, 
-  treatment_of_interest = 0,
+  treatment_of_interest = 1,
   metrics = c("auc", "brier", "oeratio"),
   quiet = TRUE
 )
