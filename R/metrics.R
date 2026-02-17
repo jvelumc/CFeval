@@ -102,11 +102,20 @@ cf_oeratio_pp <- function(obs_outcome, obs_trt, cf_pred, cf_trt, ipw) {
 
 cf_calplot <- function(obs_outcome, obs_trt, cf_pred, cf_trt, ipw) {
 
-  n_breaks <- 8
+  # it does not make sense to split the data into more groups than there is
+  # unique data. E.g. for the null model, we want one group, not 8.
+  n_breaks <- min(8, length(unique(cf_pred)))
 
   cal <- data.frame(obs_outcome, obs_trt, cf_pred, ipw)
   cal <- cal[order(cf_pred), ]
-  cal$group <- cut(seq_len(nrow(cal)), breaks = n_breaks, labels = F)
+  if (n_breaks >= 2) {
+    print("yes")
+    cal$group <- cut(seq_len(nrow(cal)), breaks = n_breaks, labels = F)
+  } else {
+    print("1")
+    cal$group <- 1
+  }
+
   cal$group <- factor(cal$group, levels = seq_len(n_breaks))
   mean_preds <- tapply(
     X = cal$cf_pred,
