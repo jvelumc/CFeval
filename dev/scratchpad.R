@@ -1,18 +1,21 @@
-n <- 1000
+n <- 10000
 
-data <- data.frame(L = rnorm(n), P = rnorm(n))
+data <- data.frame(L = rnorm(n))
 data$A <- rbinom(n, 1, plogis(data$L))
-data$Y <- rbinom(n, 1, plogis(0.1 + 0.5*data$L + 0.7*data$P - 2*data$A))
+data$Y0 <- rbinom(n, 1, plogis(0.1 + 0.5*data$L))
+data$Y1 <- rbinom(n, 1, plogis(0.1 + 0.5*data$L - 4*data$A))
+data$Y <- ifelse(data$A == 1, data$Y1, data$Y0)
 
-random <- runif(n, 0, 1)
-model <- glm(Y ~ A + P, data = data, family = "binomial")
 naive_perfect <- data$Y
+causal_perfect <- data$Y0
 
 CFscore(
-  object = list("ran" = random, "mod" = model, "per" = naive_perfect),
+  object = list("naive" = naive_perfect, "causal" = causal_perfect),
   data = data,
   outcome_formula = Y ~ 1,
   treatment_formula = A ~ L,
   treatment_of_interest = 0,
+  metrics = c("oeratio", "oeratio_pp"),
+  null.model = FALSE
 )
 
