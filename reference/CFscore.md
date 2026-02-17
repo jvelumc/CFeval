@@ -11,7 +11,7 @@ CFscore(
   outcome_formula,
   treatment_formula,
   treatment_of_interest,
-  metrics = c("auc", "brier", "oeratio", "oeratio_pp", "calplot"),
+  metrics = c("auc", "brier", "oeratio", "calplot"),
   time_horizon,
   cens.model = "cox",
   null.model = TRUE,
@@ -70,8 +70,8 @@ CFscore(
 - metrics:
 
   A character vector specifying which performance metrics to be
-  computed. Options are c("auc", "brier", "oeratio", "oeratio_pp",
-  "calplot"). See details.
+  computed. Options are c("auc", "brier", "oeratio", "calplot"). See
+  details.
 
 - time_horizon:
 
@@ -132,35 +132,45 @@ auc is area under the (ROC) curve, estimated ...
 
 Brier score is defined as 1 / sum(iptw) sum(predictions_i - outcome_i)^2
 
-oeratio and oeratio_pp represent the observed/expected ratio, where
-observed is the mean of the outcomes in the pseudopopulation. For
-oeratio, the expected is the mean of the predictions in the original
-observed population. For oeratio_pp, expected is the mean of the
-predictions in the pseudopopulation. A perfect model will have
-oeratio_pp equal to exactly one, but not necessarily oeratio equal to
-one, if the size of the (weighted) pseudopopulation is not exactly equal
-to the size of the original population.
+oeratio represents the observed/expected ratio, where observed is the
+mean of the outcomes in the pseudopopulation. The expected is the mean
+of the predictions in the original observed population.
 
 ## Examples
 
 ``` r
-data <- data.frame(L = rnorm(1000), P = rnorm(1000))
-data$A <- rbinom(1000, 1, plogis(L))
-#> Error: object 'L' not found
-data$Y <- rbinom(1000, 1, plogis(0.1 + 0.5*data$L + 0.7*data$P - 0.8*data$A))
-#> Warning: NAs produced
+n <- 1000
 
-random <- runif(1000, 0, 1)
+data <- data.frame(L = rnorm(n), P = rnorm(n))
+data$A <- rbinom(n, 1, plogis(data$L))
+data$Y <- rbinom(n, 1, plogis(0.1 + 0.5*data$L + 0.7*data$P - 2*data$A))
+
+random <- runif(n, 0, 1)
 model <- glm(Y ~ A + P, data = data, family = "binomial")
-#> Error in eval(predvars, data, env): object 'A' not found
-perfect <- data$Y
+naive_perfect <- data$Y
 
 CFscore(
-  object = list("ran" = random, "mod" = model, "per" = perfect),
+  object = list("ran" = random, "mod" = model, "per" = naive_perfect),
   data = data,
   outcome_formula = Y ~ 1,
   treatment_formula = A ~ L,
   treatment_of_interest = 0,
 )
-#> Error in eval(predvars, data, env): object 'A' not found
+#> Estimation of the performance of the prediction model in a
+#>  counterfactual (CF) dataset where everyone's treatment A was set to 0.
+#> The following assumptions must be satisfied for correct inference:
+#> - Conditional exchangeability requires that given IP-weights are
+#>  sufficient to adjust for confounding and selection bias between
+#>  treatment and outcome.
+#> - Positivity (assess $ipt$weights for outliers)
+#> - Consistency
+#> - No interference
+#> - Correctly specified propensity formula. Estimated treatment model is
+#>  logit(A) = -0.08 + 0.95*L. See also $ipt$model
+#> 
+#>       model   auc brier oeratio
+#>  null model 0.500 0.249    1.00
+#>         ran 0.493 0.328    1.06
+#>         mod 0.644 0.237    1.08
+#>         per 1.000 0.000    1.50
 ```

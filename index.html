@@ -152,7 +152,7 @@ Figure 1. DAG for toy example
 <span>  outcome_formula <span class="op">=</span> <span class="va">Y</span> <span class="op">~</span> <span class="fl">1</span>,</span>
 <span>  treatment_formula <span class="op">=</span> <span class="va">A</span> <span class="op">~</span> <span class="va">L</span>, </span>
 <span>  treatment_of_interest <span class="op">=</span> <span class="fl">0</span>,</span>
-<span>  bootstrap <span class="op">=</span> <span class="fl">50</span>,</span>
+<span>  bootstrap <span class="op">=</span> <span class="fl">200</span>,</span>
 <span>  bootstrap_progress <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  stable_iptw <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  quiet <span class="op">=</span> <span class="cn">TRUE</span></span>
@@ -162,25 +162,25 @@ Figure 1. DAG for toy example
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;         model   auc lower upper</span></span>
 <span><span class="co">#&gt;    null model 0.500 0.500 0.500</span></span>
-<span><span class="co">#&gt;        random 0.519 0.481 0.569</span></span>
-<span><span class="co">#&gt;   naive model 0.752 0.717 0.786</span></span>
-<span><span class="co">#&gt;  causal model 0.752 0.717 0.786</span></span>
+<span><span class="co">#&gt;        random 0.519 0.486 0.557</span></span>
+<span><span class="co">#&gt;   naive model 0.752 0.722 0.785</span></span>
+<span><span class="co">#&gt;  causal model 0.752 0.722 0.785</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; brier</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;         model brier lower upper</span></span>
-<span><span class="co">#&gt;    null model 0.244 0.237 0.248</span></span>
-<span><span class="co">#&gt;        random 0.319 0.296 0.341</span></span>
-<span><span class="co">#&gt;   naive model 0.208 0.194 0.223</span></span>
+<span><span class="co">#&gt;    null model 0.244 0.238 0.248</span></span>
+<span><span class="co">#&gt;        random 0.319 0.300 0.338</span></span>
+<span><span class="co">#&gt;   naive model 0.208 0.195 0.221</span></span>
 <span><span class="co">#&gt;  causal model 0.198 0.189 0.208</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; oeratio</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;         model oeratio lower upper</span></span>
-<span><span class="co">#&gt;    null model    1.00 0.957  1.07</span></span>
-<span><span class="co">#&gt;        random    1.17 1.114  1.26</span></span>
-<span><span class="co">#&gt;   naive model    1.21 1.159  1.29</span></span>
-<span><span class="co">#&gt;  causal model    1.01 0.968  1.08</span></span></code></pre></div>
+<span><span class="co">#&gt;    null model    1.00 0.948  1.06</span></span>
+<span><span class="co">#&gt;        random    1.17 1.107  1.24</span></span>
+<span><span class="co">#&gt;   naive model    1.21 1.147  1.28</span></span>
+<span><span class="co">#&gt;  causal model    1.01 0.958  1.07</span></span></code></pre></div>
 <p><img src="reference/figures/README-unnamed-chunk-7-1.png" width="100%"><img src="reference/figures/README-unnamed-chunk-7-2.png" width="100%"><img src="reference/figures/README-unnamed-chunk-7-3.png" width="100%"><img src="reference/figures/README-unnamed-chunk-7-4.png" width="100%"><img src="reference/figures/README-unnamed-chunk-7-5.png" width="100%"></p>
 </div>
 </div>
@@ -204,6 +204,8 @@ Figure 1. DAG for toy example
 <h2 data-toc-skip>Developers</h2>
 <ul class="list-unstyled">
 <li>Jasper van Egeraat <br><small class="roles"> Author, maintainer </small>   </li>
+<li>Nan van Geloven <br><small class="roles"> Author </small>   </li>
+<li>Ruth Keogh <br><small class="roles"> Author </small>   </li>
 </ul>
 </div>
 
@@ -214,7 +216,7 @@ Figure 1. DAG for toy example
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by Jasper van Egeraat.</p>
+  <p>Developed by Jasper van Egeraat, Nan van Geloven, Ruth Keogh.</p>
 </div>
 
 <div class="pkgdown-footer-right">
