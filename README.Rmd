@@ -44,9 +44,6 @@ We also need something to validate. We will create a couple of models using the 
 # naive model, not accounting for confounding variable L
 naive_model <- glm(Y ~ A + P, family = "binomial", data = df_dev)
 
-# model targeting untreated risk, not accounting for confounding
-naive_untreated_model <- glm(Y ~ P, family = "binomial", data = df_dev[df_dev$A == 0, ])
-
 # causal model, accounting for L by IP-weighting
 trt_model <- glm(A ~ L, family = "binomial", data = df_dev)
 propensity_score <- predict(trt_model, type = "response")
@@ -87,7 +84,6 @@ CFscore(
   object = list(
     "random" = random_predictions,
     "naive model" = naive_model,
-    "naive untreated model" = naive_untreated_model,
     "causal model" = causal_model
   ),
   data = df_val, 
@@ -99,7 +95,7 @@ CFscore(
 
 As we see, the causal model has best calibration and Brier score. 
 
-Note that the AUC of the naive models and the causal model are equal. AUC is driven entirely by how individuals' model predictions are ranked, not by the magnitude of the predictions. In this simple setting, P is the only variable driving prognostic differences between individuals (in a pseudopopulation where we counterfactually set everyone's treatment status to $0$). While the models have different coefficients for P, individuals are ranked in exactly the same way.
+Note that the AUC of the naive model and the causal model are equal. AUC is driven entirely by how individuals' model predictions are ranked, not by the magnitude of the predictions. In this simple setting, P is the only variable driving prognostic differences between individuals (in a pseudopopulation where we counterfactually set everyone's treatment status to $0$). While the models have different coefficients for P, individuals are ranked in exactly the same way.
 
 $CFscore()$ also supports stabilized weights and bootstrapping for confidence intervals.
 Right censored survival data and cox models are also supported.
@@ -109,7 +105,6 @@ CFscore(
   object = list(
     "random" = random_predictions,
     "naive model" = naive_model,
-    "naive untreated model" = naive_untreated_model,
     "causal model" = causal_model
   ),
   data = df_val, 
