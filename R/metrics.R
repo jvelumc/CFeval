@@ -109,10 +109,8 @@ cf_calplot <- function(obs_outcome, obs_trt, cf_pred, cf_trt, ipw) {
   cal <- data.frame(obs_outcome, obs_trt, cf_pred, ipw)
   cal <- cal[order(cf_pred), ]
   if (n_breaks >= 2) {
-    print("yes")
     cal$group <- cut(seq_len(nrow(cal)), breaks = n_breaks, labels = F)
   } else {
-    print("1")
     cal$group <- 1
   }
 
