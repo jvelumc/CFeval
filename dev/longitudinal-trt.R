@@ -16,61 +16,53 @@ alpha_A <- -0.5
 alpha_L <- 0.5
 alpha_U <- 0.5
 
-U <- rnorm(n, 0, 0.1)
+simulate_longitudinal <- function(n, fix_trt = NULL) {
+  U <- rnorm(n, 0, 0.1)
 
-A <- matrix(nrow = n, ncol = n_visits)
-L <- matrix(nrow = n, ncol = n_visits)
+  A <- matrix(nrow = n, ncol = n_visits)
+  L <- matrix(nrow = n, ncol = n_visits)
 
-time <- rep(NA, n)
-status <- rep(NA, n)
+  time <- rep(NA, n)
+  status <- rep(NA, n)
 
-for (i in 1:n_visits) {
-
-  # simulate A and L only for those still at risk
-  ids <- which(is.na(status))
-  n_ids <- length(ids)
-
-  if (i == 1) {
-    L[ids, 1] <- rnorm(n_ids, U, 1)
-    A[ids, 1] <- rbinom(n_ids, 1, plogis(gamma_0 + gamma_L * L[ids, 1]))
-  } else {
-    L[ids, i] <- rnorm(n_ids, 0.8 * L[ids, i - 1] - A[ids, i - 1] + 0.1 * i + U[ids], 1)
-    # 0.1 * i is 0.1 * (i - 1) in Nan code
-
-    A[ids, i] <- ifelse(
-      test = A[ids, i - 1] == 1,
-      yes = 1,
-      no = rbinom(n_ids, 1, plogis(gamma_0 + gamma_L * L[ids, i]))
-    )
+  simulate_A <- function(i, L, fix_trt) {
+    if (is.null(fix_trt)) {
+      return(rbinom(n, 1, plogis(gamma_0 + gamma_L * L[, i])))
+    } else {
+      return(rep(fix_trt, n))
+    }
   }
 
-  # do we simulate an event with current hazard before the next visit?
-  # if not, we reroll next visit
-  temp_time <- simulate_time_to_event(
-    n = n_ids,
-    constant_baseline_haz = 1,
-    LP = alpha_0 + alpha_A * A[ids, i] + alpha_L * L[ids, i] + alpha_U * U[ids]
-  )
-  time[ids] <- ifelse(
-    temp_time <= 1,
-    yes = (i - 1) + temp_time,
-    no = NA
-  )
-  status[ids] <- ifelse(
-    temp_time <= 1,
-    yes = 1,
-    no = NA
-  )
+  L[, 1] <- rnorm(n, U, 1)
+  A[, 1] <- simulate_A(1, L, fix_trt)
+
+  for (i in 2:n_visits) {
+    L[, i] <- rnorm(n, plogis(0.8 * L[, i - 1] - A[, i - 1] + 0.1 * i + U))
+    A[, i] <- ifelse(A[, i - 1] == 1, 1, simulate_A(i, L, fix_trt))
+  }
+
+  for (i in 1:n_visits){
+    new.t <- simulate_time_to_event(
+      n = n,
+      constant_baseline_haz = 1,
+      LP = alpha_0 + alpha_A * A[, i] + alpha_L * L[, i] + alpha_U * U
+    )
+    time <- ifelse(is.na(time) & new.t < 1, i - 1 + new.t,time)
+  }
+  status <- ifelse(is.na(time), 0, 1)
+  time <- ifelse(is.na(time), 5, time)
+
+  colnames(A) <- paste0("A", 1:n_visits - 1)
+  colnames(L) <- paste0("L", 1:n_visits - 1)
+
+  data.table(time, status, A, L, U)
 }
 
-# censor everyone at time = 5
-time <- ifelse(is.na(time), 5, time)
-status <- ifelse(is.na(status), 0, 1)
+df_dev <- simulate_longitudinal(n)
+df_cf0 <- simulate_longitudinal(n, 0)
+df_cf1 <- simulate_longitudinal(n, 1)
 
-colnames(A) <- paste0("A", 1:n_visits - 1)
-colnames(L) <- paste0("L", 1:n_visits - 1)
 
-data <- data.frame(time, status, A, L)
 
 data_long <- reshape(
   data,
