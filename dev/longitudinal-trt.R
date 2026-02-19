@@ -5,7 +5,7 @@ library(data.table)
 
 # simulate some longitudinal trt time to event data
 
-n <- 10000
+n <- 50000
 n_visits <- 5
 
 gamma_0 <- -1
@@ -37,7 +37,7 @@ simulate_longitudinal <- function(n, fix_trt = NULL) {
   A[, 1] <- simulate_A(1, L, fix_trt)
 
   for (i in 2:n_visits) {
-    L[, i] <- rnorm(n, plogis(0.8 * L[, i - 1] - A[, i - 1] + 0.1 * i + U))
+    L[, i] <- rnorm(n, 0.8 * L[, i - 1] - A[, i - 1] + 0.1 * i + U)
     A[, i] <- ifelse(A[, i - 1] == 1, rep(1, n), simulate_A(i, L, fix_trt))
   }
 
@@ -205,7 +205,6 @@ lapply(
 
 L0 <- df_cf0[, L0]
 df_cf0[, `:=`(one = 1, risk = risk0(5))]
-df_cf0
 
 lapply(
   X = c("auc", "brier", "oeratio"),
