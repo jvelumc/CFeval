@@ -52,8 +52,8 @@ simulate_longitudinal <- function(n, fix_trt = NULL) {
   status <- ifelse(is.na(time), 0, 1)
   time <- ifelse(is.na(time), 5, time)
 
-  colnames(A) <- paste0("A", 1:n_visits - 1)
-  colnames(L) <- paste0("L", 1:n_visits - 1)
+  colnames(A) <- paste0("A", 0:(n_visits - 1))
+  colnames(L) <- paste0("L", 0:(n_visits - 1))
 
   data.table(id = 1:n, time, status, A, L, U)
 }
