@@ -64,6 +64,7 @@ summary(df_dev$time)
 df_cf0 <- simulate_longitudinal(n, 0)
 df_cf1 <- simulate_longitudinal(n, 1)
 
+
 make_long <- function(data) {
   long <- melt(data,
        measure.vars = patterns("^A", "^L"),
@@ -193,7 +194,7 @@ lapply(
   X = c("auc", "brier", "oeratio"),
   FUN = function(m) {
     data_wide[, cf_metric(metric = m,
-                          obs_outcome = data_wide$status,
+                          obs_outcome = status,
                           obs_trt = correct_treatment,
                           cf_pred = risk_untreated,
                           cf_trt = 1,
@@ -202,6 +203,19 @@ lapply(
   }
 )
 
+L0 <- df_cf0[, L0]
+df_cf0[, `:=`(one = 1, risk = risk0(5))]
+df_cf0
 
-
-
+lapply(
+  X = c("auc", "brier", "oeratio"),
+  FUN = function(m) {
+    df_cf0[, cf_metric(metric = m,
+                          obs_outcome = status,
+                          obs_trt = one,
+                          cf_pred = risk,
+                          cf_trt = 1,
+                          ipw = rep(1, n)
+    )]
+  }
+)
