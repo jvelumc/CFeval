@@ -92,10 +92,6 @@ make_long <- function(data) {
 
 df_dev_long <- make_long(df_dev)
 
-
-
-# now we should form a counterfactual dataset to assess whether results are correct
-
 # model dev ---------------------------------------------------------------
 
 wt.mod <- glm(A ~ L, family="binomial", data=df_dev_long[A_lag1==0,])
@@ -158,16 +154,68 @@ df_dev_long[, `:=`(wt = NULL, wt.cum = NULL, ipw = NULL)]
 # 'observed' risks ----------------------------------------------------------
 
 # CF observed risk under never treatment
+iptw <- ipt_weights(df_dev_long, A ~ L * A_lag1)
+iptw$model
 
-wt.mod <- glm(A ~ L, family = "binomial", data = df_dev_long[A_lag1 == 0])
-pred.wt0 <- predict(wt.mod, type = "response", newdata = df_dev_long)
-df_dev_long[, wt0 := 1 - pred.wt0]
-df_dev_long[, ipw0 := 1/cumprod(wt0), by = id]
+df_dev_long[, ipw_visit := iptw$weights]
+df_dev_long[, iptw := cumprod(ipw_visit), by = id]
+
+# wt.mod <- glm(A ~ L, family = "binomial", data = df_dev_long[A_lag1 == 0])
+# pred.wt0 <- predict(wt.mod, type = "response", newdata = df_dev_long)
+# df_dev_long[, wt0 := 1 - pred.wt0]
+# df_dev_long[, ipw0 := 1/cumprod(wt0), by = id]
 df_dev_long[, in.dat.0 := A == 0]
+
+
+trt_of_interest <- c(0,0,0,0,0)
+
+df_dev_long[, trt_deviation :=
+     visit[match(TRUE, A != trt_of_interest[visit+1])],
+   by = id]
+
+
+df_dev_long[,
+  artificially_censored := fifelse(is.na(trt_deviation), FALSE, visit >= trt_deviation)
+]
+
+df_wide_again <- df_dev_long[, .(
+  L0 = L0[1],
+  time = max(0, time_end[artificially_censored == FALSE]),
+  status = max(0, status[artificially_censored == FALSE]),
+  iptw = last(iptw[artificially_censored == FALSE])
+), by = id]
+
+summary(df_wide_again$status)
+df_dev_long[in.dat.0 == TRUE]
+
+df_wide_again[, trt := fifelse(is.na(iptw), 0, 1)]
+
+km <- survfit(Surv(time, status) ~ 1, data = df_wide_again[trt == 1], weights = iptw)
+
+df_collapsed <- df_dev_long[in.dat.0 == TRUE, .(
+  time = max(time_end),
+  status = max(status),
+  iptw = last(iptw),
+  L0 = L0[1]
+), by = id]
+
+survfit(Surv(time, status) ~ 1, data =df_collapsed, weights = iptw) |>
+  summary(times = 5)
+L0 <- df_collapsed$L0
+summary(risk0(5))
+
+
+#######################
+# why do intermediate iptw seem to matter?
+#######################
+#######################
+
+plot(km)
+risk0 <- obs <- summary(km, times = 5)
 
 # can this be done as weighted mean in the in.dat.0 pop?
 km.0 <- survfit(Surv(time_start, time_end, status) ~ 1,
-                data = df_dev_long[in.dat.0 == TRUE], weights = ipw0)
+                data = df_dev_long[in.dat.0 == TRUE], weights = iptw)
 step.risk0.obs=stepfun(km.0$time,c(1,km.0$surv))
 
 risk0_obs <- 1 - step.risk0.obs(5)
