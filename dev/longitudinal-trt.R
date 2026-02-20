@@ -120,12 +120,12 @@ hrt <- function(variable, value) {
 }
 
 # # risk under never treated
-risk0 <- function(t) {
+risk0 <- function(t, L0) {
   1 - exp(-cumhaz.fun(t)*hrt("L0", L0))
 }
 
 # # risk under always treated
-risk1 <- function(t) {
+risk1 <- function(t, L0) {
   1 - exp(-(
     cumhaz.fun(min(t, 1))*
       hrt("L0", L0)*hrt("A", 1) +
@@ -207,6 +207,7 @@ summary(risk0(5))
 
 #######################
 # why do intermediate iptw seem to matter?
+# or is the prev code wrong? likely
 #######################
 #######################
 
@@ -221,12 +222,30 @@ step.risk0.obs=stepfun(km.0$time,c(1,km.0$surv))
 risk0_obs <- 1 - step.risk0.obs(5)
 
 
+df_wide_again[, risk_untreated := risk0(5, L0)]
+
+lapply(
+  X = c("auc", "brier", "oeratio"),
+  FUN = function(m) {
+    df_wide_again[, cf_metric(metric = m,
+                          obs_outcome = status,
+                          obs_trt = trt,
+                          cf_pred = risk_untreated,
+                          cf_trt = 1,
+                          ipw = iptw
+    )]
+  }
+)
+
+
+
+
+
 # define indicator that is 1 if treatment of interest is followed
 # means subject must follow treatment strategy of interest until survtime or
 # until prediction horizon
 df_dev_long[, correct_treatment := all(as.integer(A == 0)), by = .(id)] # works in this simple case
 data_wide <- df_dev_long[, .SD[.N], by = id]
-data_wide[, risk_untreated := risk0(5)]
 
 # brier_null <- data_wide[, cf_brier(
 #   obs_outcome = data_wide$status,
