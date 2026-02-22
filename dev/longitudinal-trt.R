@@ -157,124 +157,49 @@ iptw$model
 
 df_dev_long[, ipw_visit := iptw$weights]
 df_dev_long[, iptw := cumprod(ipw_visit), by = id]
-df_dev_long[, in.dat.0 := A == 0]
 
-1 - (survfit(Surv(time_start, time_end, status) ~ 1,
-             data = df_dev_long[in.dat.0 == TRUE], weights = iptw) |>
-       summary(times = 5))$surv
+risk_untreated <- risk0(5, df_dev_long[, .(L0[1]), by = id]$V1)
+risk_treated <- risk1(5, df_dev_long[, .(L0[1]), by = id]$V1)
 
-df_dev_long[, correct_treatment := all(as.integer(A == 0)), by = .(id)]
-df_dev_long[, risk_untreated := risk0(5, L0)]
-data_wide <- df_dev_long[, .SD[.N], by = id]
+metrics_long_trt <- function(data_long, trt_of_interest, risk) {
+  # trt_of_interest <- c(0,0,0,0,0)
+  data_long <- copy(data_long)
+
+  data_long[, trt := identical(A, trt_of_interest[seq_along(A)]), by = id]
+
+  df_last <- data_long[, .SD[.N], by = id]
+  # df_last[, risk := risk0(5, L0)]
 
 
-# this does not take into account patients that have trt (0, 0, 1,1,1) at all.
-# but these should be taken into account, and censored after t = 2.
-lapply(
-  X = c("auc", "brier", "oeratio"),
-  FUN = function(m) {
-    data_wide[, cf_metric(metric = m,
+
+  null_pred <- df_last[trt == 1, weighted.mean(status, iptw)]
+
+  m <- lapply(
+    X = c("auc", "brier", "oeratio"),
+    FUN = function(m) {
+      df_last[, cf_metric(metric = m,
                           obs_outcome = status,
-                          obs_trt = correct_treatment,
-                          cf_pred = risk_untreated,
+                          obs_trt = trt,
+                          cf_pred = risk,
                           cf_trt = 1,
                           ipw = iptw
-    )]
-  }
+      )]
+    }
+  )
+  print(m)
+
+  brier_null <- df_last[, cf_brier(status, trt, rep(null_pred, .N), 1, iptw)]
+  scaled_brier <- (brier_null - m[[2]])/brier_null*100
+  # print(scaled_brier)
+}
+
+
+metrics_long_trt(df_dev_long, c(0,0,0,0,0), risk_untreated)
+lapply(c("auc", "brier", "oeratio"),
+       function(m) df_cf0[, cf_metric(m, status, rep(1, .N), risk0(5, L0), 1, rep(1, .N))]
 )
 
-
-# -------------------------------------------------------------------------
-
-
-#
-# trt_of_interest <- c(0,0,0,0,0)
-#
-# df_dev_long[, trt_deviation :=
-#      visit[match(TRUE, A != trt_of_interest[visit+1])],
-#    by = id]
-#
-# df_dev_long[,
-#   artificially_censored := fifelse(is.na(trt_deviation), FALSE, visit >= trt_deviation)
-# ]
-
-# df_wide_again <- df_dev_long[, .(
-#   L0 = L0[1],
-#   time = max(0, time_end[artificially_censored == FALSE]),
-#   status = max(0, status[artificially_censored == FALSE]),
-#   iptw = last(iptw[artificially_censored == FALSE])
-# ), by = id]
-#
-# summary(df_wide_again$status)
-# df_dev_long[in.dat.0 == TRUE]
-#
-# df_wide_again[, trt := fifelse(is.na(iptw), 0, 1)]
-#
-# km <- survfit(Surv(time, status) ~ 1, data = df_wide_again[trt == 1], weights = iptw)
-#
-
-
-
-# can this be done as weighted mean in the in.dat.0 pop?
-
-
-
-# -------------------------------------------------------------------------
-
-
-
-
-
-
-
-
-
-#
-# df_collapsed <- df_dev_long[in.dat.0 == TRUE, .(
-#   time = max(time_end),
-#   status = max(status),
-#   iptw = last(iptw),
-#   L0 = L0[1],
-#   risk_untreated = first(risk_untreated)
-# ), by = id]
-#
-# 1 - (survfit(Surv(time, status) ~ 1, data = df_collapsed, weights = iptw) |>
-#   summary(times = 5))$surv
-#
-#
-#
-#
-# # define indicator that is 1 if treatment of interest is followed
-# # means subject must follow treatment strategy of interest until survtime or
-# # until prediction horizon
-# df_dev_long[, correct_treatment := all(as.integer(A == 0)), by = .(id)] # works in this simple case
-# data_wide <- df_dev_long[, .SD[.N], by = id]
-#
-#
-# lapply(
-#   X = c("auc", "brier", "oeratio"),
-#   FUN = function(m) {
-#     data_wide[, cf_metric(metric = m,
-#                           obs_outcome = status,
-#                           obs_trt = correct_treatment,
-#                           cf_pred = risk_untreated,
-#                           cf_trt = 1,
-#                           ipw = ipw0
-#     )]
-#   }
-# )
-#
-# df_cf0[, `:=`(one = 1, risk = risk0(5, L0))]
-#
-# lapply(
-#   X = c("auc", "brier", "oeratio"),
-#   FUN = function(m) {
-#     df_cf0[, cf_metric(metric = m,
-#                           obs_outcome = status,
-#                           obs_trt = one,
-#                           cf_pred = risk,
-#                           cf_trt = 1,
-#                           ipw = rep(1, n)
-#     )]
-#   }
-# )
+metrics_long_trt(df_dev_long, c(1,1,1,1,1), risk_treated)
+lapply(c("auc", "brier", "oeratio"),
+       function(m) df_cf1[, cf_metric(m, status, rep(1, .N), risk1(5, L0), 1, rep(1, .N))]
+)
